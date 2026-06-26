@@ -1,6 +1,6 @@
 # AI SDD Bootstrap Skill 设计文档
 
-> 一个 Kimi Code CLI Skill，用于在新建项目时初始化 AI 编程工程化骨架，并在迭代过程中辅助生成 Spec、ADR 和 Harness。
+> 一个 CLI Skill，用于在新建项目时初始化 AI 编程工程化骨架，并在迭代过程中辅助生成 Spec、ADR 和 Harness。
 
 ## 1. 背景与目标
 
@@ -15,7 +15,7 @@
 
 ### 1.2 目标
 
-将上述方法封装成一个可复用的 Kimi Code CLI Skill，实现：
+将上述方法封装成一个可复用的 CLI Skill，实现：
 
 1. **分阶段初始化**：MVP 阶段只生成最小骨架，不提前建立文档/约束；架构稳定后再一键建立完整工程化框架
 2. **辅助沉淀**：在编码过程中辅助生成 ADR、Feature Spec、Harness

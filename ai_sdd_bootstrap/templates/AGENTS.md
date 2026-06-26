@@ -1,6 +1,6 @@
 # AGENTS.md
 
-**Status:** Entry instructions for AI agents (Kimi Code, Cursor, Copilot, Codex, etc.).
+**Status:** Entry instructions for AI agents (Claude Code, Cursor, Copilot, Codex, etc.).
 
 ## Required Reading
 

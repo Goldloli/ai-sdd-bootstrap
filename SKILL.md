@@ -19,7 +19,7 @@ Use this skill when:
 
 ## Commands
 
-This skill wraps the `ai_sdd_bootstrap` Python package. The Kimi Code skill entry point is `scripts/ai_sdd_bootstrap.py`; when installed as a CLI package the command is `ai-sdd`.
+This skill wraps the `ai_sdd_bootstrap` Python package. When installed as a CLI package the command is `ai-sdd`; when used as a skill from an agent's skill directory, the entry script is `scripts/ai_sdd_bootstrap.py`.
 
 Run one of:
 - `ai-sdd init`
