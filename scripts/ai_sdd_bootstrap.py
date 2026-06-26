@@ -410,7 +410,14 @@ def cmd_bootstrap_foundation(args):
 
     print("\nBootstrapped foundation SDD framework.")
     print(f"Stacks: {stacks_display}, Stage: foundation")
-    print("Next: run 'review-architecture' with AI, then start adding ADRs and harnesses.")
+    print("\nRecommended next steps:")
+    print("  1. Review MVP architecture:")
+    print("       ai-sdd review-architecture")
+    print("  2. Record 2-3 framework-level decisions (DB, framework, auth):")
+    print("       ai-sdd add-adr --title \"...\"")
+    print("  3. Identify one core flow to lock:")
+    print("       ai-sdd suggest-harness --top 1")
+    print("  4. Update AI_HANDOFF.md with current focus and open questions.")
 
 
 def cmd_status(args):

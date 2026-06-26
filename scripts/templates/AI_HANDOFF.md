@@ -19,6 +19,15 @@ This file is the first document an AI should read when joining the project or st
 3. [CLAUDE.md](./CLAUDE.md) — Claude-specific charter
 4. [AGENTS.md](./AGENTS.md) — generic agent entry
 
+## Foundation Onboarding Checklist
+
+When the foundation was just bootstrapped, work through these in order:
+
+- [ ] Run `ai-sdd review-architecture` and discuss the output.
+- [ ] Record 2-3 framework-level decisions (DB, framework, auth) with `ai-sdd add-adr`.
+- [ ] Pick one core flow and lock it with `ai-sdd suggest-harness --top 1`.
+- [ ] Fill in the Current Focus / Open Questions sections below.
+
 ## Current Focus
 
 [What is being worked on right now?]
