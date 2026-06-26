@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-sdd-bootstrap"
+version = "0.2.0"
+description = "Staged AI-engineering scaffold. Minimal MVP setup first, then full Spec/Harness/ADR framework on demand."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Goldloli"},
+]
+keywords = ["ai", "spec-driven-development", "harness", "adr", "agent", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+]
+requires-python = ">=3.9"
+
+[project.scripts]
+ai-sdd = "ai_sdd_bootstrap.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Goldloli/ai_sdd_bootstrap"
+Repository = "https://github.com/Goldloli/ai_sdd_bootstrap"
+Issues = "https://github.com/Goldloli/ai_sdd_bootstrap/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ai_sdd_bootstrap*"]
+
+[tool.setuptools.package-data]
+ai_sdd_bootstrap = ["templates/*"]
