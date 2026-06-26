@@ -1,4 +1,4 @@
-package {{SLUG}}
+package {{PACKAGE}}
 
 // Harness: {{TITLE}}
 //
@@ -9,6 +9,9 @@ package {{SLUG}}
 //
 // TODO: Replace this draft harness with real inputs and expected outputs.
 //       It intentionally fails until you wire up real assertions.
+//
+// If the package under test is not in this directory, change the package
+// name to {{PACKAGE}}_test and import your module path.
 
 import "testing"
 

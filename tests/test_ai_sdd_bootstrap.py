@@ -177,6 +177,22 @@ class AiSddBootstrapTests(unittest.TestCase):
         self.assertIn("t.Fatalf", content)
         # Exported test function must start with Test and be PascalCase.
         self.assertIn("func TestLoginRejection", content)
+        # Package name must match the directory (last segment of module path).
+        self.assertIn("package auth", content)
+
+    def test_go_harness_uses_module_name_for_nested_package(self):
+        """A module like 'backend/auth' should produce package 'auth'."""
+        self._capture(
+            self.module.add_harness_go,
+            "Login rejection",
+            "backend/auth",
+            "Reject login with wrong password.",
+        )
+        go_file = self.root / "tests" / "harness" / "backend" / "auth" / "login_rejection_test.go"
+        self.assertTrue(go_file.exists())
+        content = go_file.read_text(encoding="utf-8")
+        self.assertIn("package auth", content)
+        self.assertNotIn("package backend_auth", content)
 
     def test_suggest_harness_top_n_is_non_interactive(self):
         """--top N must auto-generate harnesses without prompting."""

@@ -727,11 +727,14 @@ def add_harness_go(title: str, module: str, purpose: str, related_spec: str = ""
     # Go convention: test files end with _test.go.
     filename = f"{snake}_test.go"
     harness_dir = PROJECT_ROOT / "tests" / "harness" / module
+    # Go package names are based on the directory that contains the file.
+    # Use the last segment of the module path (e.g. "backend/auth" -> "auth").
+    package_name = Path(module).name.replace("-", "_")
     content = (
         load_template("harness-go.go")
         .replace("{{TITLE}}", title)
         .replace("{{PURPOSE}}", purpose or "[To be completed]")
-        .replace("{{SLUG}}", snake)
+        .replace("{{PACKAGE}}", package_name)
         .replace("{{PASCAL_SLUG}}", pascal_slug(title))
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
@@ -825,9 +828,19 @@ def cmd_add_harness(args):
     # evaluation / scenario currently ship python-only templates; route them
     # before the per-stack dispatch so the choice of --kind wins over --stack.
     if kind == "evaluation":
+        if stack != "python":
+            print(
+                f"Warning: evaluation harnesses currently use a Python template; "
+                f"--stack {stack} will be ignored."
+            )
         add_harness_evaluation(title, module, purpose, related_spec)
         return
     if kind == "scenario":
+        if stack != "python":
+            print(
+                f"Warning: scenario harnesses currently use a Python template; "
+                f"--stack {stack} will be ignored."
+            )
         add_harness_scenario(title, module, purpose, related_spec)
         return
 

@@ -16,7 +16,7 @@ This project is in MVP/exploration phase. Focus on validating ideas and getting 
 
 ## Transition to Foundation
 
-When the user indicates the MVP is validated and wants to build the full engineering framework (e.g., "建立更详细的 ADR 和 Harness 框架", "进入建低级阶段", "完善工程化框架"), invoke the `ai-sdd-bootstrap` skill with `bootstrap-foundation`.
+When the user indicates the MVP is validated and wants to build the full engineering framework (e.g., "建立更详细的 ADR 和 Harness 框架", "进入 foundation 阶段", "完善工程化框架"), invoke the `ai-sdd-bootstrap` skill with `bootstrap-foundation`.
 
 ## Handoff
 

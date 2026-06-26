@@ -35,8 +35,9 @@ Run one of:
 
 When this skill is invoked with a prompt, map the intent to a command:
 
-- "init", "initialize", "set up this project", "bootstrap", "新建项目" → `init`
+- "init", "initialize", "set up this project", "新建项目" → `init`
 - "bootstrap foundation", "build the full framework", "建立更详细的adr和harness框架", "进入建地基阶段", "完善工程化框架", "搭好工程化底座" → `bootstrap-foundation`
+  - Avoid mapping the standalone word "bootstrap" by itself; it is ambiguous.
 - "status", "check status", "what should I do next" → `status`
 - "add an ADR", "new architecture decision" → `add-adr`
 - "add a spec", "write a feature spec" → `add-spec`
