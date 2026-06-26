@@ -189,6 +189,39 @@ class AiSddBootstrapTests(unittest.TestCase):
         # Exported test function must start with Test and be PascalCase.
         self.assertIn("func TestLoginRejection", content)
 
+    def test_suggest_harness_top_n_is_non_interactive(self):
+        """--top N must auto-generate harnesses without prompting."""
+        # Plant a high-signal source file: name contains "auth" so the core-flow
+        # heuristic scores it.
+        src = self.root / "src" / "auth_service.py"
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_text("def login():\n    pass\n" * 10, encoding="utf-8")
+
+        args = SimpleNamespace(top="1", dry_run=False)
+        out = io.StringIO()
+        # Replace stdin EOF is handled inside prompt(); we just need to ensure
+        # no interactive prompt blocks us. With --top set, we never reach prompt().
+        with redirect_stdout(out):
+            self.module.cmd_suggest_harness(args)
+
+        harnesses = list((self.root / "tests" / "harness").rglob("test_*.py"))
+        self.assertEqual(len(harnesses), 1)
+        self.assertIn("Auto-generating", out.getvalue())
+
+    def test_suggest_harness_dry_run_does_not_create_files(self):
+        """--dry-run must list candidates but not write any harness file."""
+        src = self.root / "src" / "payment.py"
+        src.parent.mkdir(parents=True, exist_ok=True)
+        src.write_text("def charge():\n    pass\n", encoding="utf-8")
+
+        args = SimpleNamespace(top=None, dry_run=True)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.module.cmd_suggest_harness(args)
+
+        self.assertFalse((self.root / "tests").exists())
+        self.assertIn("Top harness candidates", out.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

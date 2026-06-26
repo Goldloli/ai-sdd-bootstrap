@@ -1019,6 +1019,20 @@ def cmd_review_architecture(args):
     print("Next: review this file with AI and create ADRs for confirmed decisions.")
 
 
+def _dispatch_harness_by_ext(ext: str, title: str, module: str, purpose: str) -> None:
+    """Pick the right harness generator based on source-file extension."""
+    if ext in {".ts", ".tsx", ".js", ".jsx"}:
+        add_harness_nodejs_ts(title, module, purpose)
+    elif ext == ".py":
+        add_harness_python(title, module, purpose)
+    elif ext == ".rs":
+        add_harness_rust(title, module, purpose)
+    elif ext == ".go":
+        add_harness_go(title, module, purpose)
+    else:
+        add_harness_shell(title, module, purpose)
+
+
 def cmd_suggest_harness(args):
     print("Analyzing project for harness candidates...")
     files = scan_source_files(PROJECT_ROOT)
@@ -1046,12 +1060,37 @@ def cmd_suggest_harness(args):
         print("No strong harness candidates found.")
         return
 
+    top_n = arg_value(args, "top")
+    dry_run = bool(getattr(args, "dry_run", False))
+
+    # --top N: non-interactive. Auto-generate harnesses for the top N candidates.
+    if top_n:
+        try:
+            n = max(1, int(top_n))
+        except ValueError:
+            print(f"Invalid --top value: {top_n}")
+            return
+        selected = candidates[:n]
+        print(f"\nAuto-generating harnesses for top {len(selected)} candidate(s):\n")
+        for _, info, reasons in selected:
+            print(f"- {info['relative']}  ({', '.join(reasons)})")
+            title = f"{info['path'].stem} behavior"
+            module = str(info["relative"].parent) if str(info["relative"].parent) != "." else "core"
+            purpose = f"Lock behavior of {info['relative']}"
+            ext = info["path"].suffix.lower()
+            _dispatch_harness_by_ext(ext, title, module, purpose)
+        return
+
+    # Default: list top 10 and optionally let the user pick one interactively.
     print("\nTop harness candidates:\n")
     for i, (score, info, reasons) in enumerate(candidates[:10], 1):
         print(f"{i}. {info['relative']}")
         print(f"   Score: {score}")
         print(f"   Reasons: {', '.join(reasons)}")
         print()
+
+    if dry_run:
+        return
 
     choice = prompt("Enter number to generate harness, or press Enter to skip")
     if not choice:
@@ -1071,14 +1110,7 @@ def cmd_suggest_harness(args):
     purpose = prompt("What boundary does this harness lock?", default=f"Lock behavior of {info['relative']}")
 
     ext = info["path"].suffix.lower()
-    if ext in {".ts", ".tsx", ".js", ".jsx"}:
-        add_harness_nodejs_ts(title, module, purpose)
-    elif ext == ".py":
-        add_harness_python(title, module, purpose)
-    elif ext == ".rs":
-        add_harness_rust(title, module, purpose)
-    else:
-        add_harness_shell(title, module, purpose)
+    _dispatch_harness_by_ext(ext, title, module, purpose)
 
 
 def main():
@@ -1120,7 +1152,16 @@ def main():
     harness_parser.add_argument("--purpose")
 
     subparsers.add_parser("review-architecture", help="Generate architecture review doc")
-    subparsers.add_parser("suggest-harness", help="Suggest harness candidates")
+    suggest_parser = subparsers.add_parser("suggest-harness", help="Suggest harness candidates")
+    suggest_parser.add_argument(
+        "--top",
+        help="Non-interactive: auto-generate harnesses for the top N candidates.",
+    )
+    suggest_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Only list candidates, do not prompt or generate harness files.",
+    )
 
     args = parser.parse_args()
 
