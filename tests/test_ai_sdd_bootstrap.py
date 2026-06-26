@@ -1,26 +1,15 @@
-import importlib.util
 import io
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from types import SimpleNamespace
 
-
-SCRIPT_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "scripts"
-    / "ai_sdd_bootstrap.py"
-)
+import ai_sdd_bootstrap.cli as ai_sdd_bootstrap_module
 
 
 def load_module():
-    spec = importlib.util.spec_from_file_location("ai_sdd_bootstrap", SCRIPT_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    return ai_sdd_bootstrap_module
 
 
 class AiSddBootstrapTests(unittest.TestCase):
