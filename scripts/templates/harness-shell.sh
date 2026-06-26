@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Harness: {{TITLE}}
 # Purpose: {{PURPOSE}}
-# Related spec: [Link to docs/feature/<feature-name>.md if applicable.]
+# Related spec: {{RELATED_SPEC}}
 
 set -euo pipefail
 

@@ -5,8 +5,7 @@ def test_{{SLUG}}():
     Purpose:
     {{PURPOSE}}
 
-    Related spec:
-    [Link to docs/feature/<feature-name>.md if applicable.]
+    Related spec: {{RELATED_SPEC}}
     """
     # TODO: Replace this draft harness with real inputs and expected outputs.
     raise AssertionError(

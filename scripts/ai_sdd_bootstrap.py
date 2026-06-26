@@ -634,11 +634,15 @@ def snake_slug(title: str) -> str:
     return slugify(title).replace("-", "_")
 
 
-def add_harness_nodejs_ts(title: str, module: str, purpose: str):
+def add_harness_nodejs_ts(title: str, module: str, purpose: str, related_spec: str = ""):
     slug = slugify(title)
     filename = f"{slug}.spec.ts"
     harness_dir = PROJECT_ROOT / "tests" / "harness" / module
-    content = load_template("harness-ts.ts").replace("{{TITLE}}", title)
+    content = (
+        load_template("harness-ts.ts")
+        .replace("{{TITLE}}", title)
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
+    )
     if purpose:
         content = content.replace(
             "[Describe the business boundary or invariant this harness locks.]",
@@ -649,7 +653,7 @@ def add_harness_nodejs_ts(title: str, module: str, purpose: str):
     print("Reminder: install vitest and update package.json test scripts if needed.")
 
 
-def add_harness_python(title: str, module: str, purpose: str):
+def add_harness_python(title: str, module: str, purpose: str, related_spec: str = ""):
     slug = snake_slug(title)
     filename = f"test_{slug}.py"
     harness_dir = PROJECT_ROOT / "tests" / "harness" / module
@@ -658,13 +662,14 @@ def add_harness_python(title: str, module: str, purpose: str):
         .replace("{{TITLE}}", title)
         .replace("{{SLUG}}", slug)
         .replace("{{PURPOSE}}", purpose or "[To be completed]")
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
     print(f"Created: {harness_dir / filename}")
     print("Reminder: install pytest and update pyproject.toml or requirements if needed.")
 
 
-def add_harness_rust(title: str, module: str, purpose: str):
+def add_harness_rust(title: str, module: str, purpose: str, related_spec: str = ""):
     slug = snake_slug(title)
     filename = f"{slug}.rs"
     harness_dir = PROJECT_ROOT / "tests" / "harness" / module
@@ -673,13 +678,14 @@ def add_harness_rust(title: str, module: str, purpose: str):
         .replace("{{TITLE}}", title)
         .replace("{{SLUG}}", slug)
         .replace("{{PURPOSE}}", purpose or "[To be completed]")
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
     print(f"Created: {harness_dir / filename}")
     print("Reminder: cargo test will pick up files under tests/.")
 
 
-def add_harness_shell(title: str, module: str, purpose: str):
+def add_harness_shell(title: str, module: str, purpose: str, related_spec: str = ""):
     slug = snake_slug(title)
     filename = f"{slug}.sh"
     harness_dir = PROJECT_ROOT / "tests" / "harness" / module
@@ -687,6 +693,7 @@ def add_harness_shell(title: str, module: str, purpose: str):
         load_template("harness-shell.sh")
         .replace("{{TITLE}}", title)
         .replace("{{PURPOSE}}", purpose or "[To be completed]")
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
     os.chmod(harness_dir / filename, 0o755)
@@ -700,7 +707,7 @@ def pascal_slug(title: str) -> str:
     return "".join(p[:1].upper() + p[1:] for p in parts if p)
 
 
-def add_harness_go(title: str, module: str, purpose: str):
+def add_harness_go(title: str, module: str, purpose: str, related_spec: str = ""):
     snake = snake_slug(title)
     # Go convention: test files end with _test.go.
     filename = f"{snake}_test.go"
@@ -711,6 +718,7 @@ def add_harness_go(title: str, module: str, purpose: str):
         .replace("{{PURPOSE}}", purpose or "[To be completed]")
         .replace("{{SLUG}}", snake)
         .replace("{{PASCAL_SLUG}}", pascal_slug(title))
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
     print(f"Created: {harness_dir / filename}")
@@ -751,19 +759,24 @@ def cmd_add_harness(args):
         return
     module = prompt_or_arg(args, "module", "Module/subdirectory (e.g., 'auth' or 'backend/auth')", default="core")
     purpose = prompt_or_arg(args, "purpose", "What boundary does this harness lock?")
+    related_spec = prompt_or_arg(
+        args,
+        "related_spec",
+        "Related spec path (e.g., 'docs/feature/login-flow.md')",
+    )
 
     warn_if_pre_foundation("Adding a harness")
 
     if stack == "nodejs-ts":
-        add_harness_nodejs_ts(title, module, purpose)
+        add_harness_nodejs_ts(title, module, purpose, related_spec)
     elif stack == "python":
-        add_harness_python(title, module, purpose)
+        add_harness_python(title, module, purpose, related_spec)
     elif stack == "rust":
-        add_harness_rust(title, module, purpose)
+        add_harness_rust(title, module, purpose, related_spec)
     elif stack == "go":
-        add_harness_go(title, module, purpose)
+        add_harness_go(title, module, purpose, related_spec)
     elif stack == "shell":
-        add_harness_shell(title, module, purpose)
+        add_harness_shell(title, module, purpose, related_spec)
     elif stack == "language-agnostic":
         print("No code harness for language-agnostic stack. Use 'shell' for a generic check.")
 
@@ -885,14 +898,52 @@ def find_harness_files() -> set[str]:
     return stems
 
 
+def find_harness_related_specs() -> set[str]:
+    """Collect every 'Related spec:' path declared inside harness files.
+
+    Matches lines like:
+        Related spec: docs/feature/login-flow.md
+        // Related spec: docs/feature/login-flow.md
+        # Related spec: docs/feature/login-flow.md
+    Only paths that actually point at docs/feature/*.md are counted, so
+    placeholder "[none]" or "[Link to ...]" strings are ignored.
+    """
+    harness_dir = PROJECT_ROOT / "tests" / "harness"
+    if not harness_dir.exists():
+        return set()
+
+    related: set[str] = set()
+    pattern = re.compile(r"[Rr]elated spec:\s*(\S+\.md)")
+    for p in harness_dir.rglob("*"):
+        if not p.is_file() or p.suffix not in {".ts", ".py", ".rs", ".go", ".sh"}:
+            continue
+        try:
+            content = p.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+        for match in pattern.finditer(content):
+            ref = match.group(1).strip()
+            # Only count real spec paths, not placeholders like "[none]".
+            if "docs/feature/" in ref or ref.startswith("feature/"):
+                related.add(ref)
+    return related
+
+
 def find_specs_without_harness() -> list[str]:
     spec_dir = PROJECT_ROOT / "docs" / "feature"
     if not spec_dir.exists():
         return []
 
+    related_specs = find_harness_related_specs()
     harness_stems = find_harness_files()
     missing = []
     for spec_file in spec_dir.glob("*.md"):
+        spec_rel = spec_file.relative_to(PROJECT_ROOT).as_posix()
+        # Primary signal: explicit "Related spec:" reference in any harness.
+        if spec_rel in related_specs:
+            continue
+        # Fallback: stem fuzzy match (legacy behaviour) for harnesses that
+        # predate --related-spec.
         spec_stem = spec_file.stem.lower().replace("-", "_")
         has_harness = any(
             spec_stem in h.replace("-", "_") or h.replace("-", "_") in spec_stem
@@ -1019,18 +1070,18 @@ def cmd_review_architecture(args):
     print("Next: review this file with AI and create ADRs for confirmed decisions.")
 
 
-def _dispatch_harness_by_ext(ext: str, title: str, module: str, purpose: str) -> None:
+def _dispatch_harness_by_ext(ext: str, title: str, module: str, purpose: str, related_spec: str = "") -> None:
     """Pick the right harness generator based on source-file extension."""
     if ext in {".ts", ".tsx", ".js", ".jsx"}:
-        add_harness_nodejs_ts(title, module, purpose)
+        add_harness_nodejs_ts(title, module, purpose, related_spec)
     elif ext == ".py":
-        add_harness_python(title, module, purpose)
+        add_harness_python(title, module, purpose, related_spec)
     elif ext == ".rs":
-        add_harness_rust(title, module, purpose)
+        add_harness_rust(title, module, purpose, related_spec)
     elif ext == ".go":
-        add_harness_go(title, module, purpose)
+        add_harness_go(title, module, purpose, related_spec)
     else:
-        add_harness_shell(title, module, purpose)
+        add_harness_shell(title, module, purpose, related_spec)
 
 
 def cmd_suggest_harness(args):
@@ -1150,6 +1201,10 @@ def main():
     harness_parser.add_argument("--title")
     harness_parser.add_argument("--module")
     harness_parser.add_argument("--purpose")
+    harness_parser.add_argument(
+        "--related-spec",
+        help="Path of the spec this harness locks (e.g. docs/feature/login-flow.md).",
+    )
 
     subparsers.add_parser("review-architecture", help="Generate architecture review doc")
     suggest_parser = subparsers.add_parser("suggest-harness", help="Suggest harness candidates")

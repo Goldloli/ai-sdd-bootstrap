@@ -6,8 +6,7 @@ import { describe, it } from 'vitest';
  * Purpose:
  * [Describe the business boundary or invariant this harness locks.]
  *
- * Related spec:
- * [Link to docs/feature/<feature-name>.md if applicable.]
+ * Related spec: {{RELATED_SPEC}}
  */
 
 describe('{{TITLE}}', () => {

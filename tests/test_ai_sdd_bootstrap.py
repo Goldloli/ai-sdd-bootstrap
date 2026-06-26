@@ -222,6 +222,40 @@ class AiSddBootstrapTests(unittest.TestCase):
         self.assertFalse((self.root / "tests").exists())
         self.assertIn("Top harness candidates", out.getvalue())
 
+    def test_add_harness_writes_related_spec_into_header(self):
+        self._capture(
+            self.module.add_harness_python,
+            "Login rejection",
+            "auth",
+            "Reject login with wrong password.",
+            "docs/feature/login-flow.md",
+        )
+        harness = (
+            self.root / "tests" / "harness" / "auth" / "test_login_rejection.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("docs/feature/login-flow.md", harness)
+
+    def test_spec_with_explicit_related_harness_is_not_flagged_missing(self):
+        """A spec referenced via --related-spec must not appear in the missing list."""
+        # Spec file.
+        feature_dir = self.root / "docs" / "feature"
+        feature_dir.mkdir(parents=True, exist_ok=True)
+        spec_path = feature_dir / "login-flow.md"
+        spec_path.write_text("# Login Flow\n", encoding="utf-8")
+
+        # Harness that explicitly references it. The stem does NOT match the
+        # spec slug, so only the precise "Related spec:" line can link them.
+        self._capture(
+            self.module.add_harness_python,
+            "Bad password guard",
+            "auth",
+            "Reject login with wrong password.",
+            "docs/feature/login-flow.md",
+        )
+
+        missing = self.module.find_specs_without_harness()
+        self.assertNotIn("login-flow.md", missing)
+
 
 if __name__ == "__main__":
     unittest.main()
