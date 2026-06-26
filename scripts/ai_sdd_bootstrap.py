@@ -74,7 +74,7 @@ def prompt_multi(question: str, choices: list[str], default: list[str] | None = 
 
 
 def all_stacks() -> list[str]:
-    return ["nodejs-ts", "python", "rust", "language-agnostic", "shell"]
+    return ["nodejs-ts", "python", "rust", "go", "language-agnostic", "shell"]
 
 
 def arg_value(args, name: str, default: str = "") -> str:
@@ -429,6 +429,7 @@ def cmd_status(args):
         harness_count += len(list(harness_dir.rglob("*.spec.ts")))
         harness_count += len(list(harness_dir.rglob("test_*.py")))
         harness_count += len(list(harness_dir.rglob("*.rs")))
+        harness_count += len(list(harness_dir.rglob("*_test.go")))
         harness_count += len(list(harness_dir.rglob("*.sh")))
 
     print("=" * 40)
@@ -693,6 +694,29 @@ def add_harness_shell(title: str, module: str, purpose: str):
     print("Reminder: run with `./path/to/harness.sh` or integrate into CI.")
 
 
+def pascal_slug(title: str) -> str:
+    """Convert a title to PascalCase for Go exported identifiers."""
+    parts = re.split(r"[^\w]+", title)
+    return "".join(p[:1].upper() + p[1:] for p in parts if p)
+
+
+def add_harness_go(title: str, module: str, purpose: str):
+    snake = snake_slug(title)
+    # Go convention: test files end with _test.go.
+    filename = f"{snake}_test.go"
+    harness_dir = PROJECT_ROOT / "tests" / "harness" / module
+    content = (
+        load_template("harness-go.go")
+        .replace("{{TITLE}}", title)
+        .replace("{{PURPOSE}}", purpose or "[To be completed]")
+        .replace("{{SLUG}}", snake)
+        .replace("{{PASCAL_SLUG}}", pascal_slug(title))
+    )
+    write_file(harness_dir / filename, content)
+    print(f"Created: {harness_dir / filename}")
+    print("Reminder: `go test ./tests/harness/...` will pick up *_test.go automatically.")
+
+
 def cmd_add_harness(args):
     meta_path = PROJECT_ROOT / "docs" / "guide" / "project-meta.md"
     available_stacks = []
@@ -736,6 +760,8 @@ def cmd_add_harness(args):
         add_harness_python(title, module, purpose)
     elif stack == "rust":
         add_harness_rust(title, module, purpose)
+    elif stack == "go":
+        add_harness_go(title, module, purpose)
     elif stack == "shell":
         add_harness_shell(title, module, purpose)
     elif stack == "language-agnostic":
@@ -849,8 +875,13 @@ def find_harness_files() -> set[str]:
         return set()
     stems = set()
     for p in harness_dir.rglob("*"):
-        if p.is_file() and p.suffix in {".ts", ".py", ".rs", ".sh"}:
-            stems.add(p.stem.replace("test_", ""))
+        if p.is_file() and p.suffix in {".ts", ".py", ".rs", ".go", ".sh"}:
+            # Strip language-specific suffixes: test_foo.py -> foo, foo_test.go -> foo,
+            # foo.spec.ts -> foo.spec. Keep snake/kebab form for matching.
+            stem = p.stem
+            stem = re.sub(r"^test_", "", stem)
+            stem = re.sub(r"_test$", "", stem)
+            stems.add(stem)
     return stems
 
 

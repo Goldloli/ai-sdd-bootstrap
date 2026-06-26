@@ -168,6 +168,27 @@ class AiSddBootstrapTests(unittest.TestCase):
         self.assertIn("Replace this draft harness", harness)
         self.assertNotIn("assert True", harness)
 
+    def test_go_harness_uses_go_test_convention_and_fails_by_default(self):
+        self._capture(
+            self.module.add_harness_go,
+            "Login rejection",
+            "auth",
+            "Reject login with wrong password.",
+        )
+
+        go_file = (
+            self.root / "tests" / "harness" / "auth" / "login_rejection_test.go"
+        )
+        self.assertTrue(go_file.exists())
+        content = go_file.read_text(encoding="utf-8")
+        # Go test files must end with _test.go to be discovered by `go test`.
+        self.assertTrue(go_file.name.endswith("_test.go"))
+        # Draft harness must fail until the placeholder is replaced.
+        self.assertIn("Replace this draft harness", content)
+        self.assertIn("t.Fatalf", content)
+        # Exported test function must start with Test and be PascalCase.
+        self.assertIn("func TestLoginRejection", content)
+
 
 if __name__ == "__main__":
     unittest.main()
