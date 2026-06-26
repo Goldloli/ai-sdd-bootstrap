@@ -36,9 +36,17 @@ Homepage = "https://github.com/Goldloli/ai-sdd-bootstrap"
 Repository = "https://github.com/Goldloli/ai-sdd-bootstrap"
 Issues = "https://github.com/Goldloli/ai-sdd-bootstrap/issues"
 
+[project.optional-dependencies]
+cjk = ["pypinyin>=0.50"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "pypinyin>=0.50"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ai_sdd_bootstrap*"]
 
 [tool.setuptools.package-data]
 ai_sdd_bootstrap = ["templates/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=ai_sdd_bootstrap --cov-report=term-missing --cov-fail-under=45"

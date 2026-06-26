@@ -4,6 +4,7 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import ai_sdd_bootstrap.cli as ai_sdd_bootstrap_module
 
@@ -23,10 +24,10 @@ class AiSddBootstrapTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def _capture(self, func, *args, **kwargs):
-        """Run a function while swallowing printed output."""
+        """Run a function while swallowing printed output and stdin."""
         out = io.StringIO()
         err = io.StringIO()
-        with redirect_stdout(out), redirect_stderr(err):
+        with redirect_stdout(out), redirect_stderr(err), patch("sys.stdin", io.StringIO("\n")):
             return func(*args, **kwargs)
 
     def bootstrap_index(self):
@@ -313,6 +314,95 @@ class AiSddBootstrapTests(unittest.TestCase):
             self.root / "tests" / "harness" / "skins" / "test_skin_event_sequence.py"
         )
         self.assertTrue(path.exists())
+
+
+class DryRunTests(unittest.TestCase):
+    def setUp(self):
+        self.module = ai_sdd_bootstrap_module
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.module.PROJECT_ROOT = self.root
+        self._original_dry_run = self.module.is_dry_run()
+
+    def tearDown(self):
+        self.module.set_dry_run(self._original_dry_run)
+        self.tmp.cleanup()
+
+    def _capture(self, func, *args, **kwargs):
+        out = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err), patch("sys.stdin", io.StringIO("\n")):
+            return func(*args, **kwargs)
+
+    def test_init_dry_run_does_not_create_files(self):
+        self.module.set_dry_run(True)
+        args = SimpleNamespace(primary_stack="python", additional_stack=None)
+        self._capture(self.module.cmd_init, args)
+        self.assertFalse((self.root / "README.md").exists())
+        self.assertFalse((self.root / "AGENTS.md").exists())
+
+    def test_add_adr_dry_run_does_not_write(self):
+        self.module.set_dry_run(True)
+        index_path = self.root / "docs" / "INDEX.md"
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text("# Index\n", encoding="utf-8")
+        args = SimpleNamespace(
+            title="Use SQLite",
+            background="b",
+            decision="d",
+            consequences="c",
+            status="accepted",
+        )
+        self._capture(self.module.cmd_add_adr, args)
+        self.assertFalse((self.root / "docs" / "adr").exists())
+
+
+class ValidateTests(unittest.TestCase):
+    def setUp(self):
+        self.module = ai_sdd_bootstrap_module
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.module.PROJECT_ROOT = self.root
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _capture(self, func, *args, **kwargs):
+        out = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err), patch("sys.stdin", io.StringIO("\n")):
+            return func(*args, **kwargs)
+
+    def test_validate_reports_broken_link(self):
+        index_path = self.root / "docs" / "INDEX.md"
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text(
+            "# Index\n\n## Architecture Decisions\n\n- [Missing ADR](./missing-adr.md)\n",
+            encoding="utf-8",
+        )
+        args = SimpleNamespace(json=False)
+        with self.assertRaises(SystemExit) as ctx:
+            self._capture(self.module.cmd_validate, args)
+        self.assertEqual(ctx.exception.code, 1)
+
+
+class SlugTests(unittest.TestCase):
+    def setUp(self):
+        self.module = ai_sdd_bootstrap_module
+
+    def test_slugify_ascii_title(self):
+        self.assertEqual(self.module.slugify("Login Flow"), "login-flow")
+
+    def test_slugify_cjk_title(self):
+        # When pypinyin is installed, CJK should be romanized.
+        slug = self.module.slugify("登录流程")
+        self.assertNotIn("\u767b\u5f55", slug)  # no raw CJK in filename
+        self.assertTrue(slug)  # not empty
+        self.assertRegex(slug, r"^[\w-]+$")
+
+    def test_slugify_empty_fallback(self):
+        slug = self.module.slugify("——")
+        self.assertTrue(slug.startswith("untitled-"))
 
 
 if __name__ == "__main__":

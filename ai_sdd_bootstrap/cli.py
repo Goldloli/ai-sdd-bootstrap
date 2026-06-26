@@ -10,6 +10,7 @@ Philosophy:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -20,6 +21,16 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPT_DIR / "templates"
 PROJECT_ROOT = Path.cwd()
+_DRY_RUN = False
+
+
+def set_dry_run(value: bool) -> None:
+    global _DRY_RUN
+    _DRY_RUN = value
+
+
+def is_dry_run() -> bool:
+    return _DRY_RUN
 
 
 def load_template(name: str) -> str:
@@ -27,8 +38,17 @@ def load_template(name: str) -> str:
 
 
 def write_file(path: Path, content: str) -> None:
+    if _DRY_RUN:
+        print(f"[dry-run] Would create: {path}")
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def report_created(path: Path) -> None:
+    if _DRY_RUN:
+        return
+    print(f"Created: {path}")
 
 
 def prompt(question: str, default: str = "") -> str:
@@ -162,6 +182,9 @@ def update_index_entry(section: str, rel_path: Path, title: str) -> None:
         lines.insert(insert_idx, entry)
         content = "\n".join(lines) + "\n"
 
+    if is_dry_run():
+        print(f"[dry-run] Would update index: {entry}")
+        return
     index_path.write_text(content, encoding="utf-8")
 
 
@@ -300,7 +323,7 @@ def cmd_init(args):
             print(f"Skipping existing file: {path}")
             continue
         write_file(path, content)
-        print(f"Created: {path}")
+        report_created(path)
 
     stacks_display = primary_stack
     if additional_stacks:
@@ -403,7 +426,7 @@ def cmd_bootstrap_foundation(args):
         if path.exists() and path in always_update:
             print(f"Updated: {path}")
         else:
-            print(f"Created: {path}")
+            report_created(path)
         write_file(path, content)
 
     stacks_display = primary_stack
@@ -422,34 +445,138 @@ def cmd_bootstrap_foundation(args):
     print("  4. Update AI_HANDOFF.md with current focus and open questions.")
 
 
+def _count_harnesses() -> int:
+    harness_dir = PROJECT_ROOT / "tests" / "harness"
+    if not harness_dir.exists():
+        return 0
+    return sum(
+        len(list(harness_dir.rglob(pattern)))
+        for pattern in ["*.spec.ts", "test_*.py", "*.rs", "*_test.go", "*.sh"]
+    )
+
+
+def _count_draft_harnesses() -> int:
+    harness_dir = PROJECT_ROOT / "tests" / "harness"
+    if not harness_dir.exists():
+        return 0
+    draft_marker = "Replace this draft harness"
+    count = 0
+    for p in harness_dir.rglob("*"):
+        if p.is_file() and p.suffix in {".ts", ".py", ".rs", ".go", ".sh"}:
+            try:
+                if draft_marker in p.read_text(encoding="utf-8"):
+                    count += 1
+            except Exception:
+                pass
+    return count
+
+
+def _build_status_recommendations(
+    initialized: bool,
+    foundation: bool,
+    stage: str,
+    adr_count: int,
+    harness_count: int,
+    dirty_files: list[str],
+) -> list[str]:
+    recommendations = []
+    if not initialized:
+        recommendations.append("Run 'init' to set up the minimal MVP scaffold.")
+        return recommendations
+
+    if not foundation:
+        recommendations.append("MVP stage: focus on validating ideas. Avoid specs, ADRs, and heavy architecture decisions.")
+        recommendations.append("Let AI explore freely. Code quality expectations are low.")
+        if dirty_files:
+            recommendations.append("Keep iterating. When the MVP feels solid and architecture stabilizes, run 'bootstrap-foundation'.")
+        else:
+            recommendations.append("No active changes. Good time to experiment or validate the next assumption.")
+        return recommendations
+
+    if stage == "foundation":
+        recommendations.append("Foundation stage: modularize MVP architecture and lock key decisions into ADRs.")
+        recommendations.append("Run 'review-architecture' to audit the current structure.")
+        if adr_count == 0:
+            recommendations.append("No ADRs yet. Start recording framework, data model, and module boundary decisions.")
+    else:
+        if adr_count == 0:
+            recommendations.append("Iteration stage: review architecture and add key ADRs first.")
+        if harness_count == 0:
+            recommendations.append("No harnesses yet. Identify one core flow or frequently-broken feature to lock down.")
+        missing_harness = find_specs_without_harness()
+        if missing_harness:
+            specs_list = ", ".join(missing_harness[:3])
+            suffix = f" and {len(missing_harness) - 3} more" if len(missing_harness) > 3 else ""
+            recommendations.append(f"Specs without harness: {specs_list}{suffix}. Consider adding harnesses to enforce boundaries.")
+
+    if dirty_files:
+        core_patterns = ["auth", "login", "payment", "permission", "security"]
+        core_changed = any(
+            any(p in f.lower() for p in core_patterns)
+            for f in dirty_files
+        )
+        if core_changed:
+            recommendations.append("Core flow changed. Consider 'add-harness' after locking the spec.")
+        else:
+            recommendations.append("Uncommitted changes detected. Consider 'add-spec' if this feature is stabilizing.")
+    else:
+        recommendations.append("No active changes. Good time to review docs/adr/ and docs/feature/ for gaps.")
+
+    return recommendations
+
+
 def cmd_status(args):
     branch, dirty_files = git_info()
     stage = read_stage()
     foundation = is_foundation_bootstrapped()
+    initialized = is_minimally_initialized()
 
     adr_dir = PROJECT_ROOT / "docs" / "adr"
     spec_dir = PROJECT_ROOT / "docs" / "feature"
-    harness_dir = PROJECT_ROOT / "tests" / "harness"
 
     adr_count = len([p for p in adr_dir.glob("ADR-*.md")]) if adr_dir.exists() else 0
     spec_count = len([p for p in spec_dir.glob("*.md")]) if spec_dir.exists() else 0
-    harness_count = 0
-    if harness_dir.exists():
-        harness_count += len(list(harness_dir.rglob("*.spec.ts")))
-        harness_count += len(list(harness_dir.rglob("test_*.py")))
-        harness_count += len(list(harness_dir.rglob("*.rs")))
-        harness_count += len(list(harness_dir.rglob("*_test.go")))
-        harness_count += len(list(harness_dir.rglob("*.sh")))
+    harness_count = _count_harnesses()
+    draft_harness_count = _count_draft_harnesses()
+    missing_harness = find_specs_without_harness() if foundation else []
+
+    recommendations = _build_status_recommendations(
+        initialized, foundation, stage, adr_count, harness_count, dirty_files
+    )
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "initialized": initialized,
+                    "foundation_bootstrapped": foundation,
+                    "stage": stage,
+                    "counts": {
+                        "adr": adr_count,
+                        "spec": spec_count,
+                        "harness": harness_count,
+                        "draft_harness": draft_harness_count,
+                    },
+                    "specs_without_harness": missing_harness,
+                    "git": {"branch": branch, "dirty_files": dirty_files},
+                    "recommendations": recommendations,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
 
     print("=" * 40)
     print("Project Status")
     print("=" * 40)
-    print(f"Initialized: {'yes' if is_minimally_initialized() else 'no'}")
+    print(f"Initialized: {'yes' if initialized else 'no'}")
     print(f"Foundation bootstrapped: {'yes' if foundation else 'no'}")
     print(f"Stage: {stage}")
     print(f"ADR count: {adr_count}")
     print(f"Feature spec count: {spec_count}")
     print(f"Harness count: {harness_count}")
+    print(f"Draft harness count: {draft_harness_count}")
     print(f"Git branch: {branch or 'N/A'}")
     print(f"Uncommitted files: {len(dirty_files)}")
     for f in dirty_files[:10]:
@@ -458,53 +585,6 @@ def cmd_status(args):
         print(f"  ... and {len(dirty_files) - 10} more")
 
     print("\nRecommendations:")
-    recommendations = []
-
-    if not is_minimally_initialized():
-        recommendations.append("Run 'init' to set up the minimal MVP scaffold.")
-        print_recommendations(recommendations)
-        return
-
-    if not foundation:
-        # MVP stage guidance
-        recommendations.append("MVP stage: focus on validating ideas. Avoid specs, ADRs, and heavy architecture decisions.")
-        recommendations.append("Let AI explore freely. Code quality expectations are low.")
-        if dirty_files:
-            recommendations.append("Keep iterating. When the MVP feels solid and architecture stabilizes, run 'bootstrap-foundation'.")
-        else:
-            recommendations.append("No active changes. Good time to experiment or validate the next assumption.")
-    else:
-        # Foundation / iteration stage guidance
-        if stage == "foundation":
-            recommendations.append("Foundation stage: modularize MVP architecture and lock key decisions into ADRs.")
-            recommendations.append("Run 'review-architecture' to audit the current structure.")
-            if adr_count == 0:
-                recommendations.append("No ADRs yet. Start recording framework, data model, and module boundary decisions.")
-        else:
-            # iteration
-            if adr_count == 0:
-                recommendations.append("Iteration stage: review architecture and add key ADRs first.")
-            if harness_count == 0:
-                recommendations.append("No harnesses yet. Identify one core flow or frequently-broken feature to lock down.")
-            missing_harness = find_specs_without_harness()
-            if missing_harness:
-                specs_list = ", ".join(missing_harness[:3])
-                suffix = f" and {len(missing_harness) - 3} more" if len(missing_harness) > 3 else ""
-                recommendations.append(f"Specs without harness: {specs_list}{suffix}. Consider adding harnesses to enforce boundaries.")
-
-        if dirty_files:
-            core_patterns = ["auth", "login", "payment", "permission", "security"]
-            core_changed = any(
-                any(p in f.lower() for p in core_patterns)
-                for f in dirty_files
-            )
-            if core_changed:
-                recommendations.append("Core flow changed. Consider 'add-harness' after locking the spec.")
-            else:
-                recommendations.append("Uncommitted changes detected. Consider 'add-spec' if this feature is stabilizing.")
-        else:
-            recommendations.append("No active changes. Good time to review docs/adr/ and docs/feature/ for gaps.")
-
     for i, rec in enumerate(recommendations, 1):
         print(f"  {i}. {rec}")
 
@@ -525,12 +605,42 @@ def next_adr_number() -> int:
     return max(numbers, default=0) + 1
 
 
+def _romanize_cjk(title: str) -> str:
+    """Romanize CJK characters when pypinyin is installed.
+
+    Falls back to a hash-based slug if pypinyin is missing, so titles that
+    would otherwise produce unreadable or empty slugs still produce a safe,
+    deterministic filename.
+    """
+    has_cjk = any("\u4e00" <= ch <= "\u9fff" for ch in title)
+    if not has_cjk:
+        return title
+    try:
+        from pypinyin import lazy_pinyin
+        return "-".join(lazy_pinyin(title))
+    except ImportError:
+        import hashlib
+        print(
+            "Warning: CJK title detected but pypinyin is not installed. "
+            "Install with: pip install 'ai-sdd-bootstrap[cjk]'. "
+            "Using a hash-based slug for now."
+        )
+        return f"cjk-{hashlib.md5(title.encode('utf-8')).hexdigest()[:8]}"
+
+
 def slugify(title: str) -> str:
-    return re.sub(r"[^\w]+", "-", title).strip("-").lower()
+    romanized = _romanize_cjk(title)
+    slug = re.sub(r"[^\w]+", "-", romanized).strip("-").lower()
+    if not slug:
+        import hashlib
+        slug = f"untitled-{hashlib.md5(title.encode('utf-8')).hexdigest()[:8]}"
+    return slug
 
 
 def ensure_foundation_dirs():
     """Create docs dirs if they don't exist (so add-adr/add-spec still work pre-foundation)."""
+    if is_dry_run():
+        return
     (PROJECT_ROOT / "docs" / "adr").mkdir(parents=True, exist_ok=True)
     (PROJECT_ROOT / "docs" / "feature").mkdir(parents=True, exist_ok=True)
 
@@ -583,7 +693,7 @@ def cmd_add_adr(args):
     path = PROJECT_ROOT / "docs" / "adr" / filename
     write_file(path, content)
     update_index_entry("Architecture Decisions", path, f"{number:03d} - {title}")
-    print(f"Created: {path}")
+    report_created(path)
 
 
 def cmd_add_spec(args):
@@ -636,7 +746,7 @@ def cmd_add_spec(args):
     path = PROJECT_ROOT / "docs" / "feature" / filename
     write_file(path, content)
     update_index_entry("Feature Specs", path, title)
-    print(f"Created: {path}")
+    report_created(path)
 
     # A spec is a soft constraint. Nudge the user toward a hard constraint
     # whenever the boundary matters enough to enforce at test time.
@@ -666,7 +776,7 @@ def add_harness_nodejs_ts(title: str, module: str, purpose: str, related_spec: s
             purpose,
         )
     write_file(harness_dir / filename, content)
-    print(f"Created: {harness_dir / filename}")
+    report_created(harness_dir / filename)
     print("Reminder: install vitest and update package.json test scripts if needed.")
 
 
@@ -682,7 +792,7 @@ def add_harness_python(title: str, module: str, purpose: str, related_spec: str 
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
-    print(f"Created: {harness_dir / filename}")
+    report_created(harness_dir / filename)
     print("Reminder: install pytest and update pyproject.toml or requirements if needed.")
 
 
@@ -698,7 +808,7 @@ def add_harness_rust(title: str, module: str, purpose: str, related_spec: str = 
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
-    print(f"Created: {harness_dir / filename}")
+    report_created(harness_dir / filename)
     print("Reminder: cargo test will pick up files under tests/.")
 
 
@@ -713,8 +823,9 @@ def add_harness_shell(title: str, module: str, purpose: str, related_spec: str =
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
-    os.chmod(harness_dir / filename, 0o755)
-    print(f"Created: {harness_dir / filename}")
+    if not is_dry_run():
+        os.chmod(harness_dir / filename, 0o755)
+    report_created(harness_dir / filename)
     print("Reminder: run with `./path/to/harness.sh` or integrate into CI.")
 
 
@@ -741,7 +852,7 @@ def add_harness_go(title: str, module: str, purpose: str, related_spec: str = ""
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
-    print(f"Created: {harness_dir / filename}")
+    report_created(harness_dir / filename)
     print("Reminder: `go test ./tests/harness/...` will pick up *_test.go automatically.")
 
 
@@ -761,7 +872,7 @@ def _fill_py_template(template_name: str, title: str, module: str, purpose: str,
         .replace("{{RELATED_SPEC}}", related_spec or "[none]")
     )
     write_file(harness_dir / filename, content)
-    print(f"Created: {harness_dir / filename}")
+    report_created(harness_dir / filename)
     print("Reminder: install pytest and update pyproject.toml or requirements if needed.")
 
 
@@ -1070,6 +1181,92 @@ def score_harness_candidate(file_info: dict, change_counts: dict, harness_stems:
     return score, reasons
 
 
+def _parse_index_links(index_path: Path) -> list[tuple[str, str]]:
+    """Return (link_text, relative_link) tuples from docs/INDEX.md."""
+    if not index_path.exists():
+        return []
+    content = index_path.read_text(encoding="utf-8")
+    links = []
+    for match in re.finditer(r"\[([^\]]+)\]\(([^)]+)\)", content):
+        link = match.group(2)
+        if link.startswith("http://") or link.startswith("https://"):
+            continue
+        links.append((match.group(1), link))
+    return links
+
+
+def cmd_validate(args):
+    index_path = PROJECT_ROOT / "docs" / "INDEX.md"
+    broken_links = []
+    for text, link in _parse_index_links(index_path):
+        # Resolve relative to docs/ directory.
+        target = (PROJECT_ROOT / "docs" / link).resolve()
+        try:
+            target.relative_to(PROJECT_ROOT)
+        except ValueError:
+            broken_links.append((text, link, "outside project root"))
+            continue
+        if not target.exists():
+            broken_links.append((text, link, "file not found"))
+
+    draft_count = _count_draft_harnesses()
+    missing_harness = find_specs_without_harness()
+
+    primary, additional = read_stack_info()
+    stage = read_stage()
+
+    issues = []
+    if broken_links:
+        issues.append(f"{len(broken_links)} broken INDEX link(s)")
+    if draft_count:
+        issues.append(f"{draft_count} harness(es) still in draft state")
+    if missing_harness:
+        issues.append(f"{len(missing_harness)} spec(s) without harness")
+    if not is_minimally_initialized():
+        issues.append("project not initialized")
+
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "valid": not issues,
+                    "stage": stage,
+                    "stack": {"primary": primary, "additional": additional},
+                    "broken_links": [
+                        {"text": t, "link": l, "reason": r}
+                        for t, l, r in broken_links
+                    ],
+                    "draft_harness_count": draft_count,
+                    "specs_without_harness": missing_harness,
+                    "issues": issues,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    print("=" * 40)
+    print("Project Validation")
+    print("=" * 40)
+    print(f"Stage: {stage}")
+    print(f"Primary stack: {primary or 'N/A'}")
+    print(f"Additional stacks: {', '.join(additional) if additional else 'none'}")
+    print(f"Broken INDEX links: {len(broken_links)}")
+    for text, link, reason in broken_links:
+        print(f"  - [{text}]({link}): {reason}")
+    print(f"Draft harnesses: {draft_count}")
+    print(f"Specs without harness: {len(missing_harness)}")
+    for spec in missing_harness:
+        print(f"  - {spec}")
+
+    if issues:
+        print(f"\nFound {len(issues)} issue(s).")
+        sys.exit(1)
+    else:
+        print("\nAll checks passed.")
+
+
 def cmd_review_architecture(args):
     print("Scanning project architecture...")
     files = scan_source_files(PROJECT_ROOT)
@@ -1247,9 +1444,17 @@ def main():
     parser = argparse.ArgumentParser(description="AI SDD Bootstrap")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    def add_dry_run(parser):
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Preview changes without writing files.",
+        )
+
     init_parser = subparsers.add_parser("init", help="Initialize minimal MVP scaffold")
     init_parser.add_argument("--primary-stack", choices=all_stacks())
     init_parser.add_argument("--additional-stack", action="append", help="Additional stack. Can be repeated or comma-separated.")
+    add_dry_run(init_parser)
 
     foundation_parser = subparsers.add_parser(
         "bootstrap-foundation",
@@ -1257,8 +1462,14 @@ def main():
     )
     foundation_parser.add_argument("--primary-stack", choices=all_stacks())
     foundation_parser.add_argument("--additional-stack", action="append", help="Additional stack. Can be repeated or comma-separated.")
+    add_dry_run(foundation_parser)
 
-    subparsers.add_parser("status", help="Show project status and recommendations")
+    status_parser = subparsers.add_parser("status", help="Show project status and recommendations")
+    status_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output machine-readable JSON instead of human text.",
+    )
 
     adr_parser = subparsers.add_parser("add-adr", help="Add an architecture decision record")
     adr_parser.add_argument("--title")
@@ -1266,6 +1477,7 @@ def main():
     adr_parser.add_argument("--decision")
     adr_parser.add_argument("--consequences")
     adr_parser.add_argument("--status", choices=["proposed", "accepted", "deprecated"])
+    add_dry_run(adr_parser)
 
     spec_parser = subparsers.add_parser("add-spec", help="Add a feature spec")
     spec_parser.add_argument("--title")
@@ -1274,6 +1486,7 @@ def main():
     spec_parser.add_argument("--boundaries")
     spec_parser.add_argument("--acceptance")
     spec_parser.add_argument("--dependencies")
+    add_dry_run(spec_parser)
 
     harness_parser = subparsers.add_parser("add-harness", help="Add a harness skeleton")
     harness_parser.add_argument("--stack")
@@ -1290,8 +1503,17 @@ def main():
         help="Harness kind: test (unit invariant, default), evaluation (task set + "
         "scorer, for LLM/agent quality), scenario (full workflow trajectory).",
     )
+    add_dry_run(harness_parser)
 
-    subparsers.add_parser("review-architecture", help="Generate architecture review doc")
+    review_parser = subparsers.add_parser("review-architecture", help="Generate architecture review doc")
+    add_dry_run(review_parser)
+
+    validate_parser = subparsers.add_parser("validate", help="Check project health and consistency")
+    validate_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output machine-readable JSON instead of human text.",
+    )
     suggest_parser = subparsers.add_parser("suggest-harness", help="Suggest harness candidates")
     suggest_parser.add_argument(
         "--top",
@@ -1304,6 +1526,7 @@ def main():
     )
 
     args = parser.parse_args()
+    set_dry_run(bool(getattr(args, "dry_run", False)))
 
     commands = {
         "init": cmd_init,
@@ -1314,6 +1537,7 @@ def main():
         "add-harness": cmd_add_harness,
         "review-architecture": cmd_review_architecture,
         "suggest-harness": cmd_suggest_harness,
+        "validate": cmd_validate,
     }
 
     commands[args.command](args)

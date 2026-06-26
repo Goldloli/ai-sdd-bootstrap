@@ -22,14 +22,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install package
-        run: pip install -e .
+        run: pip install -e '.[dev]'
 
-      - name: Run tests
-        run: python3 -m unittest discover -s tests -v
+      - name: Run tests with coverage
+        run: pytest
 
       - name: Smoke test CLI
         run: |
           ai-sdd --help
+          ai-sdd validate --help
           mkdir /tmp/smoke-test && cd /tmp/smoke-test
           ai-sdd init --primary-stack python
           ai-sdd bootstrap-foundation
+          ai-sdd status --json
+          ai-sdd validate --json
+          ai-sdd add-adr --dry-run --title "Test ADR" --background "b" --decision "d" --consequences "c"
+          ai-sdd add-spec --dry-run --title "Test Spec" --in-scope "i" --out-scope "o"
