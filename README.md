@@ -303,6 +303,33 @@ ai-sdd suggest-harness --top 1
 ai-sdd suggest-harness --dry-run
 ```
 
+### Validate Project Health
+
+Check that links, specs, and harnesses are consistent:
+
+```bash
+ai-sdd validate
+```
+
+It reports broken `docs/INDEX.md` links, harnesses still in draft state, and specs without a related harness.
+
+For AI agent consumption:
+
+```bash
+ai-sdd validate --json
+```
+
+## AI Agent Flags
+
+All write commands support `--dry-run` to preview changes without writing files, and `--strict` to fail instead of prompting or silently using defaults. Use these when invoking the tool from an AI agent:
+
+```bash
+ai-sdd init --primary-stack python --dry-run
+ai-sdd add-adr --strict --title "Use SQLite" --background "..." --decision "..." --consequences "..."
+```
+
+`status` and `validate` support `--json` for machine-readable output.
+
 ## File Purposes
 
 | File or Directory | Purpose |

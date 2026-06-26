@@ -6,7 +6,7 @@
 
 AI SDD Bootstrap 帮助你和 Codex、Claude Code、Kimi Code、Cursor、Copilot 等 AI agent 实践**规格驱动开发（Spec-Driven Development, SDD）**。它在正确的时间生成适量的结构，既不会在 MVP 阶段过度工程化，也不会在长期迭代中失去控制。
 
-核心理念很简单：
+## 核心理念
 
 - **MVP 阶段：** 快速移动、验证想法、避免过早写 spec。
 - **Foundation 阶段：** MVP 跑通后，把架构和项目规则文档化。
@@ -326,6 +326,33 @@ ai-sdd suggest-harness --top 1
 ai-sdd suggest-harness --dry-run
 ```
 
+### 校验项目健康度
+
+检查 INDEX 链接、spec 与 harness 是否一致：
+
+```bash
+ai-sdd validate
+```
+
+它会报告 `docs/INDEX.md` 中的死链、仍处于 draft 状态的 harness，以及没有 harness 的 spec。
+
+给 AI agent 消费：
+
+```bash
+ai-sdd validate --json
+```
+
+## AI Agent 专用参数
+
+所有会写文件的命令都支持 `--dry-run`（只预览不写文件）和 `--strict`（缺参数时直接失败，而不是静默使用默认值）。AI agent 调用时建议加上：
+
+```bash
+ai-sdd init --primary-stack python --dry-run
+ai-sdd add-adr --strict --title "Use SQLite" --background "..." --decision "..." --consequences "..."
+```
+
+`status` 和 `validate` 支持 `--json`，方便 agent 直接解析。
+
 ## 每个文件的用途
 
 | 文件或目录 | 用途 |
@@ -458,6 +485,23 @@ ai-sdd review-architecture
 # 寻找适合加 harness 的位置
 ai-sdd suggest-harness --top 1
 ```
+
+## 贡献
+
+欢迎 Issue 和 Pull Request。开发环境：
+
+```bash
+git clone https://github.com/Goldloli/ai-sdd-bootstrap.git
+cd ai-sdd-bootstrap
+pip install -e '.[dev]'
+pytest
+```
+
+详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+## 许可
+
+MIT。详见 [LICENSE](LICENSE)。
 
 ## 致谢
 
