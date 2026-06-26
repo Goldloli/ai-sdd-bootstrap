@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import ai_sdd_bootstrap.cli as ai_sdd_bootstrap_module
+import ai_sdd_bootstrap.core as core_module
 
 
 def load_module():
@@ -18,7 +19,7 @@ class AiSddBootstrapTests(unittest.TestCase):
         self.module = load_module()
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.module.PROJECT_ROOT = self.root
+        core_module.PROJECT_ROOT = self.root
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -338,7 +339,7 @@ class DryRunTests(unittest.TestCase):
         self.module = ai_sdd_bootstrap_module
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.module.PROJECT_ROOT = self.root
+        core_module.PROJECT_ROOT = self.root
         self._original_dry_run = self.module.is_dry_run()
 
     def tearDown(self):
@@ -379,7 +380,7 @@ class ValidateTests(unittest.TestCase):
         self.module = ai_sdd_bootstrap_module
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.module.PROJECT_ROOT = self.root
+        core_module.PROJECT_ROOT = self.root
 
     def tearDown(self):
         self.tmp.cleanup()
