@@ -2,7 +2,10 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.eggs/
 .pytest_cache/
+build/
+dist/
 
 # OS
 .DS_Store
@@ -14,3 +17,6 @@ __pycache__/
 
 # Claude Code local state
 .claude/
+
+# Local development installs
+*.egg
