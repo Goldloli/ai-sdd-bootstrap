@@ -733,6 +733,39 @@ def add_harness_go(title: str, module: str, purpose: str, related_spec: str = ""
     print("Reminder: `go test ./tests/harness/...` will pick up *_test.go automatically.")
 
 
+HARNESS_KINDS = ["test", "evaluation", "scenario"]
+
+
+def _fill_py_template(template_name: str, title: str, module: str, purpose: str, related_spec: str, prefix: str = "test_") -> None:
+    """Shared filler for python-flavoured harness templates."""
+    slug = snake_slug(title)
+    filename = f"{prefix}{slug}.py" if prefix else f"{slug}.py"
+    harness_dir = PROJECT_ROOT / "tests" / "harness" / module
+    content = (
+        load_template(template_name)
+        .replace("{{TITLE}}", title)
+        .replace("{{SLUG}}", slug)
+        .replace("{{PURPOSE}}", purpose or "[To be completed]")
+        .replace("{{RELATED_SPEC}}", related_spec or "[none]")
+    )
+    write_file(harness_dir / filename, content)
+    print(f"Created: {harness_dir / filename}")
+    print("Reminder: install pytest and update pyproject.toml or requirements if needed.")
+
+
+def add_harness_evaluation(title: str, module: str, purpose: str, related_spec: str = ""):
+    """Evaluation harness: fixed task set + scorer + pass threshold."""
+    # Only python template exists for now; other stacks should pass --stack shell.
+    _fill_py_template("harness-eval-py.py", title, module, purpose, related_spec)
+    print("Note: evaluation harness currently ships a python template only.")
+
+
+def add_harness_scenario(title: str, module: str, purpose: str, related_spec: str = ""):
+    """Scenario harness: full workflow with expected trajectory + forbidden effects."""
+    _fill_py_template("harness-scenario-py.py", title, module, purpose, related_spec)
+    print("Note: scenario harness currently ships a python template only.")
+
+
 def cmd_add_harness(args):
     meta_path = PROJECT_ROOT / "docs" / "guide" / "project-meta.md"
     available_stacks = []
@@ -772,8 +805,24 @@ def cmd_add_harness(args):
         "related_spec",
         "Related spec path (e.g., 'docs/feature/login-flow.md')",
     )
+    kind = prompt_choice_or_arg(
+        args,
+        "kind",
+        "Harness kind",
+        HARNESS_KINDS,
+        default="test",
+    )
 
     warn_if_pre_foundation("Adding a harness")
+
+    # evaluation / scenario currently ship python-only templates; route them
+    # before the per-stack dispatch so the choice of --kind wins over --stack.
+    if kind == "evaluation":
+        add_harness_evaluation(title, module, purpose, related_spec)
+        return
+    if kind == "scenario":
+        add_harness_scenario(title, module, purpose, related_spec)
+        return
 
     if stack == "nodejs-ts":
         add_harness_nodejs_ts(title, module, purpose, related_spec)
@@ -1212,6 +1261,12 @@ def main():
     harness_parser.add_argument(
         "--related-spec",
         help="Path of the spec this harness locks (e.g. docs/feature/login-flow.md).",
+    )
+    harness_parser.add_argument(
+        "--kind",
+        choices=HARNESS_KINDS,
+        help="Harness kind: test (unit invariant, default), evaluation (task set + "
+        "scorer, for LLM/agent quality), scenario (full workflow trajectory).",
     )
 
     subparsers.add_parser("review-architecture", help="Generate architecture review doc")

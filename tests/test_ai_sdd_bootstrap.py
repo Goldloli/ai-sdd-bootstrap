@@ -256,6 +256,59 @@ class AiSddBootstrapTests(unittest.TestCase):
         missing = self.module.find_specs_without_harness()
         self.assertNotIn("login-flow.md", missing)
 
+    def test_evaluation_harness_template_is_generated_and_fails(self):
+        self._capture(
+            self.module.add_harness_evaluation,
+            "Memory recall quality",
+            "agent",
+            "Evaluate memory recall accuracy across golden cases.",
+            "docs/feature/memory-recall.md",
+        )
+        path = (
+            self.root / "tests" / "harness" / "agent" / "test_memory_recall_quality.py"
+        )
+        self.assertTrue(path.exists())
+        content = path.read_text(encoding="utf-8")
+        # Draft harness must require user wiring before it can pass.
+        self.assertIn("NotImplementedError", content)
+        # Evaluation-specific scaffolding must be present.
+        self.assertIn("EvalCase", content)
+        self.assertIn("PASS_THRESHOLD", content)
+
+    def test_scenario_harness_template_is_generated_and_fails(self):
+        self._capture(
+            self.module.add_harness_scenario,
+            "First launch onboarding",
+            "agent",
+            "Drive the first-launch scenario end-to-end.",
+            "docs/feature/first-launch.md",
+        )
+        path = (
+            self.root / "tests" / "harness" / "agent" / "test_first_launch_onboarding.py"
+        )
+        self.assertTrue(path.exists())
+        content = path.read_text(encoding="utf-8")
+        self.assertIn("NotImplementedError", content)
+        # Scenario-specific scaffolding must be present.
+        self.assertIn("STEPS", content)
+        self.assertIn("TRAJECTORY_CHECKS", content)
+
+    def test_add_harness_kind_routes_to_scenario(self):
+        """--kind scenario must bypass the per-stack dispatch."""
+        args = SimpleNamespace(
+            stack="python",
+            title="Skin event sequence",
+            module="skins",
+            purpose="Verify skin event sequence stays valid.",
+            related_spec="docs/feature/skins.md",
+            kind="scenario",
+        )
+        self._capture(self.module.cmd_add_harness, args)
+        path = (
+            self.root / "tests" / "harness" / "skins" / "test_skin_event_sequence.py"
+        )
+        self.assertTrue(path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
