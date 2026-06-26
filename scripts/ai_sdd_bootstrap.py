@@ -629,6 +629,14 @@ def cmd_add_spec(args):
     update_index_entry("Feature Specs", path, title)
     print(f"Created: {path}")
 
+    # A spec is a soft constraint. Nudge the user toward a hard constraint
+    # whenever the boundary matters enough to enforce at test time.
+    rel_path = path.relative_to(PROJECT_ROOT).as_posix()
+    print(
+        "Tip: to turn this spec into a hard constraint, run:\n"
+        f"  ai-sdd add-harness --title \"{title}\" --related-spec {rel_path}"
+    )
+
 
 def snake_slug(title: str) -> str:
     return slugify(title).replace("-", "_")
