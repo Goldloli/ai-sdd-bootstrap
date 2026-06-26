@@ -1,74 +1,75 @@
 # AI SDD Bootstrap
 
-AI SDD Bootstrap is a staged scaffold for AI-assisted software projects. It helps you start lightweight during MVP exploration, then add Spec, ADR, and Harness structure only after the project is worth sustaining.
+AI SDD Bootstrap 是一个面向 AI 辅助软件项目的分阶段脚手架。它帮助你在 MVP 探索阶段保持轻量，只有在项目值得长期维护时，才补上 Spec、ADR、Harness 的完整结构。
 
-The core idea is simple:
+核心理念很简单：
 
-- **MVP stage:** move fast, validate the idea, avoid premature specs.
-- **Foundation stage:** after the MVP works, document the architecture and project rules.
-- **Iteration stage:** lock stable decisions with specs and executable harnesses.
+- **MVP 阶段：** 快速移动、验证想法、避免过早写 spec。
+- **Foundation 阶段：** MVP 跑通后，把架构和项目规则文档化。
+- **Iteration 阶段：** 把稳定下来的决策用 spec 和可执行的 harness 锁住。
 
-## When To Use It
+## 什么时候用
 
-Use this skill when:
+满足以下任一情况时使用本 skill：
 
-- You are starting a new project with AI assistance.
-- Your MVP already works and you want to prevent future AI changes from breaking old behavior.
-- You need a repeatable structure for ADRs, feature specs, and harness tests.
-- You want agents such as Codex, Kimi, Cursor, Claude Code, or Copilot to read the same project rules.
+- 你正在用 AI 辅助启动一个新项目。
+- MVP 已经跑通，你想防止后续 AI 改动破坏既有行为。
+- 你需要一套可复用的结构来组织 ADR、feature spec 和 harness 测试。
+- 你希望 Codex、Kimi、Cursor、Claude Code、Copilot 等 agent 都读到同一份项目规则。
 
-Do not use the full framework at the very beginning of a throwaway prototype. Start with `init` only.
+一次性原型项目的最初阶段不要上完整框架，只跑 `init` 即可。
 
-## Install Location
+## 安装位置
 
-This skill lives at:
+本 skill 位于：
 
 ```bash
 ~/.agents/skills/ai-sdd-bootstrap
 ```
 
-The main command is:
+主命令是：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py
 ```
 
-For convenience, you can create an alias:
+为方便使用，可以创建一个别名：
 
 ```bash
 alias ai-sdd='python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py'
 ```
 
-Then use `ai-sdd status`, `ai-sdd init`, and so on.
+然后用 `ai-sdd status`、`ai-sdd init` 等等。
 
-## Supported Stacks
+## 支持的技术栈
 
 - `nodejs-ts`
 - `python`
 - `rust`
+- `go`
 - `language-agnostic`
 - `shell`
 
-You can choose one primary stack and optional additional stacks.
+可以选择一个主栈和若干附加栈。
 
-## The Recommended Workflow
+## 推荐工作流
 
-### 1. Start A New MVP
+### 1. 启动一个新的 MVP
 
-Run this inside your project root:
+在项目根目录下运行：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py init
 ```
 
-Non-interactive example:
+非交互示例：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py init \
   --primary-stack nodejs-ts
 ```
 
-This creates only:
+它只会创建：
 
 ```text
 AGENTS.md
@@ -76,33 +77,33 @@ README.md
 .gitignore
 ```
 
-It intentionally does **not** create `docs/`, `CLAUDE.md`, `AI_HANDOFF.md`, or harness files. The MVP is still a draft; do not bury it under process too early.
+它**故意不**创建 `docs/`、`CLAUDE.md`、`AI_HANDOFF.md` 或 harness 文件。MVP 还是一份草稿，不要过早用流程把它埋掉。
 
-### 2. Build Freely Until The MVP Is Validated
+### 2. 在 MVP 验证通过前自由构建
 
-During MVP:
+MVP 阶段：
 
-- Let AI explore implementation options.
-- Keep code small and easy to change.
-- Avoid writing many specs.
-- Record only decisions that are truly locked.
+- 让 AI 探索实现方案。
+- 保持代码小、易于改动。
+- 避免写大量 spec。
+- 只记录真正已经锁定的决策。
 
-Good signals that you are ready for the next stage:
+可以进入下一阶段的信号：
 
-- You have used the MVP as a real user.
-- The product direction is no longer changing every hour.
-- You can name the main modules and boundaries.
-- You have started worrying that AI may break old behavior while adding new features.
+- 你已经以真实用户身份用过 MVP。
+- 产品方向不再每小时都在变。
+- 你能说清楚主要模块和边界。
+- 你开始担心 AI 在加新功能时把旧行为改坏。
 
-### 3. Bootstrap The Foundation
+### 3. 引导 Foundation 框架
 
-Once the MVP is validated, run:
+MVP 验证通过后，运行：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py bootstrap-foundation
 ```
 
-Non-interactive example:
+非交互示例：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py bootstrap-foundation \
@@ -110,7 +111,7 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py bootstrap-
   --additional-stack python
 ```
 
-This creates the full SDD structure:
+这会创建完整的 SDD 结构：
 
 ```text
 docs/
@@ -127,40 +128,40 @@ CLAUDE.md
 README.md
 ```
 
-From this point on, agents should read `AGENTS.md`, `CLAUDE.md`, `AI_HANDOFF.md`, and `docs/guide/ai-behavior.md` before making substantial changes.
+从这一刻起，agent 在做出实质性改动前，应该先读 `AGENTS.md`、`CLAUDE.md`、`AI_HANDOFF.md` 和 `docs/guide/ai-behavior.md`。
 
-### 4. Check Project Status
+### 4. 查看项目状态
 
-Run this any time:
+任何时候都可以运行：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py status
 ```
 
-It reports:
+它会报告：
 
-- Whether the project is initialized.
-- Whether the foundation framework exists.
-- Current stage.
-- ADR count.
-- Feature spec count.
-- Harness count.
-- Git branch and uncommitted files.
-- Recommended next actions.
+- 项目是否已初始化。
+- Foundation 框架是否存在。
+- 当前阶段。
+- ADR 数量。
+- Feature spec 数量。
+- Harness 数量。
+- Git 分支和未提交文件。
+- 推荐的下一步动作。
 
-## Common Commands
+## 常用命令
 
-### Add An ADR
+### 添加 ADR
 
-Use an ADR for architectural decisions that should not be re-decided every time a new AI session starts.
+当某个架构决策不应该被每次新 AI 会话重新争论时，就写一条 ADR。
 
-Interactive:
+交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr
 ```
 
-Non-interactive:
+非交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr \
@@ -171,19 +172,19 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr \
   --status accepted
 ```
 
-This creates a file under `docs/adr/` and updates `docs/INDEX.md`.
+这会在 `docs/adr/` 下创建文件，并更新 `docs/INDEX.md`。
 
-### Add A Feature Spec
+### 添加 Feature Spec
 
-Use a feature spec when a behavior or boundary has stabilized.
+当某个行为或边界已经稳定下来时，写一条 feature spec。
 
-Interactive:
+交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec
 ```
 
-Non-interactive:
+非交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec \
@@ -195,106 +196,127 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec \
   --dependencies "ADR-001-use-sqlite-for-local-storage.md"
 ```
 
-This creates a file under `docs/feature/` and updates `docs/INDEX.md`.
+这会在 `docs/feature/` 下创建文件，并更新 `docs/INDEX.md`。
 
-### Add A Harness
+### 添加 Harness
 
-Use a harness when a behavior is important enough to enforce with executable checks.
+当某个行为重要到需要用可执行检查来强制时，就加一个 harness。
 
-Interactive:
+交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness
 ```
 
-Non-interactive:
+非交互式：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness \
   --stack nodejs-ts \
   --title "Login Rejects Wrong Password" \
   --module auth \
-  --purpose "Lock the invariant that invalid credentials never create a session."
+  --purpose "Lock the invariant that invalid credentials never create a session." \
+  --related-spec docs/feature/login-flow.md \
+  --kind test
 ```
 
-Important: generated harnesses are **draft constraints**. They intentionally fail until you replace the placeholder with real setup, real inputs, and real assertions. Do not count a generated harness as coverage until it tests real behavior.
+重要：生成的 harness 是**草稿约束**。它们故意失败，直到你把占位符替换为真实的 setup、输入和断言。在替换之前，不要把它算作覆盖。
 
-Generated paths:
+生成路径：
 
 ```text
 nodejs-ts -> tests/harness/<module>/<name>.spec.ts
 python    -> tests/harness/<module>/test_<name>.py
 rust      -> tests/harness/<module>/<name>.rs
+go        -> tests/harness/<module>/<name>_test.go
 shell     -> tests/harness/<module>/<name>.sh
 ```
 
-### Review Architecture
+Harness 类型（`--kind`）：
 
-After the MVP works, ask the tool to generate an architecture review document:
+- `test`（默认）—— 单不变量的单元 harness，每个文件对应一种栈。
+- `evaluation` —— 固定任务集 + 评分器 + 通过阈值，适合 LLM / agent 质量（目前只有 python 模板）。
+- `scenario` —— 完整工作流，带期望轨迹和禁止副作用（目前只有 python 模板）。
+
+`--related-spec` 会在 harness 文件头部写入一行 `Related spec:`。`status` 用这些显式声明（以 stem 匹配作为回退）来报告哪些 spec 还缺少硬约束。
+
+### 架构评审
+
+MVP 跑通后，让工具生成一份架构评审文档：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py review-architecture
 ```
 
-This scans source files and writes:
+它会扫描源码文件并写出：
 
 ```text
 docs/guide/architecture-review.md
 ```
 
-Use the result as a discussion document with AI. Do not blindly refactor everything it lists.
+把结果当作和 AI 讨论的素材，不要盲目按它列的所有项重构。
 
-### Suggest Harness Candidates
+### 建议 Harness 候选
 
-To find likely places for harnesses:
+寻找适合加 harness 的位置：
 
 ```bash
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py suggest-harness
 ```
 
-The tool uses heuristics such as:
+工具使用的启发式包括：
 
-- Core-flow names like `auth`, `login`, `payment`, `permission`, `security`.
-- Files changed repeatedly in recent git history.
-- Large files.
-- Files with many functions.
-- Files with TODO/FIXME/HACK markers.
+- 核心流程名称：`auth`、`login`、`payment`、`permission`、`security`。
+- 最近 git 历史中反复被修改的文件。
+- 大文件。
+- 函数很多的文件。
+- 带 TODO/FIXME/HACK 标记的文件。
 
-Treat the output as suggestions, not orders.
+把输出当作建议，而不是命令。
 
-## What Each File Is For
+非交互式用法：
 
-| File or directory | Purpose |
+```bash
+# 自动对 top 1 候选生成 harness（适合 AI agent 调用）
+ai-sdd suggest-harness --top 1
+
+# 只列出候选，不写文件
+ai-sdd suggest-harness --dry-run
+```
+
+## 每个文件的用途
+
+| 文件或目录 | 用途 |
 |---|---|
-| `AGENTS.md` | Entry instructions for AI agents. |
-| `CLAUDE.md` | Claude-specific project charter. |
-| `AI_HANDOFF.md` | Current project state for new AI sessions. |
-| `docs/INDEX.md` | Navigation map for specs and ADRs. |
-| `docs/guide/ai-behavior.md` | Required AI collaboration rules. |
-| `docs/guide/project-meta.md` | Stack, stage, and harness metadata. |
-| `docs/adr/` | Architecture Decision Records. |
-| `docs/feature/` | Feature specs and stable behavior boundaries. |
-| `tests/harness/` | Executable checks for important invariants. |
+| `AGENTS.md` | AI agent 的入口指令。 |
+| `CLAUDE.md` | Claude 专用的项目宪章。 |
+| `AI_HANDOFF.md` | 当前项目状态，给新 AI 会话看。 |
+| `docs/INDEX.md` | spec 和 ADR 的导航地图。 |
+| `docs/guide/ai-behavior.md` | 必读的 AI 协作规则。 |
+| `docs/guide/project-meta.md` | 栈、阶段、harness 元信息。 |
+| `docs/adr/` | 架构决策记录。 |
+| `docs/feature/` | Feature spec 和稳定的行为边界。 |
+| `tests/harness/` | 重要不变量的可执行检查。 |
 
-## Stage Guide
+## 阶段指南
 
-| Stage | What to optimize for | What to avoid |
+| 阶段 | 优化目标 | 应避免 |
 |---|---|---|
-| MVP | Working end-to-end behavior | Heavy docs, broad specs, fake architecture certainty |
-| Foundation | Module boundaries, ADRs, project rules | Harnessing everything |
-| Iteration | Stable specs, targeted harnesses, safe changes | Letting docs drift from code |
+| MVP | 端到端能跑通 | 沉重的文档、大而全的 spec、虚假的架构确定性 |
+| Foundation | 模块边界、ADR、项目规则 | 给所有东西都套上 harness |
+| Iteration | 稳定的 spec、精准的 harness、安全的改动 | 文档和代码脱节 |
 
-## Good Use Patterns
+## 正确用法示例
 
-Good MVP usage:
+好的 MVP 用法：
 
 ```bash
 ai-sdd init --primary-stack nodejs-ts
 ```
 
-Then build the project freely until the idea is validated.
+然后自由构建，直到想法被验证。
 
-Good foundation usage:
+好的 foundation 用法：
 
 ```bash
 ai-sdd bootstrap-foundation --primary-stack nodejs-ts
@@ -302,7 +324,7 @@ ai-sdd review-architecture
 ai-sdd add-adr
 ```
 
-Good iteration usage:
+好的 iteration 用法：
 
 ```bash
 ai-sdd add-spec
@@ -310,31 +332,31 @@ ai-sdd add-harness
 ai-sdd status
 ```
 
-## Common Mistakes
+## 常见错误
 
-### Mistake: Running `bootstrap-foundation` Too Early
+### 错误：过早跑 `bootstrap-foundation`
 
-If the product direction is still changing rapidly, stay in MVP. Premature specs become constraints around guesses.
+如果产品方向还在剧烈变化，就留在 MVP 阶段。过早的 spec 会变成围绕猜测的约束。
 
-### Mistake: Treating A Generated Harness As Real Coverage
+### 错误：把生成的 harness 当成真实覆盖
 
-Generated harness files intentionally fail. Replace the placeholder with a real test before counting it.
+生成的 harness 文件是故意失败的。在算作覆盖前，必须把占位符替换为真实测试。
 
-### Mistake: Writing Specs For Every Thought
+### 错误：给每个想法都写 spec
 
-A spec is for decisions that are already validated or intentionally locked. If the idea is still a guess, keep it out of specs.
+Spec 是给已经验证过、或有意锁定的决策用的。如果想法还只是猜测，就先别写进 spec。
 
-### Mistake: Loading Every Doc Into Every AI Session
+### 错误：把所有文档都塞进每次 AI 会话
 
-The framework is built for selective loading. Read the index, then load only the relevant ADRs and specs.
+这套框架是为按需加载设计的。先读索引，再加载相关的 ADR 和 spec。
 
-### Mistake: Letting `AI_HANDOFF.md` Go Stale
+### 错误：让 `AI_HANDOFF.md` 腐烂
 
-Update it before major planning sessions or handoffs. It should reflect current focus, recent decisions, open questions, and next steps.
+在重要的规划会话或交接之前更新它。它应该反映当前焦点、近期决策、待解决问题、下一步。
 
-## Typical Human Prompt Examples
+## 典型的人类提示词示例
 
-Ask an AI agent:
+向 AI agent 提问：
 
 ```text
 Use the ai-sdd-bootstrap skill to initialize this project for MVP exploration.
@@ -356,41 +378,41 @@ Use ai-sdd-bootstrap to suggest where this project needs harness tests.
 Use ai-sdd-bootstrap to add a harness for the login rejection behavior.
 ```
 
-## Maintenance Checklist
+## 维护清单
 
-After each meaningful feature:
+每完成一个有意义的功能后：
 
-1. Ask whether any decision is now stable.
-2. If yes, add or update a feature spec.
-3. Ask whether breaking this behavior would be expensive or hard to notice.
-4. If yes, add a real harness.
-5. Update `AI_HANDOFF.md` if the project direction, current focus, or open questions changed.
-6. Run `status` to see what the project is missing.
+1. 想一想有没有哪个决策现在已经稳定下来。
+2. 如果有，添加或更新一条 feature spec。
+3. 想一想破坏这个行为的代价是否很高、或是否很难被发现。
+4. 如果是，加一个真实的 harness。
+5. 如果项目方向、当前焦点或待解决问题发生了变化，更新 `AI_HANDOFF.md`。
+6. 跑 `status` 看看项目还缺什么。
 
-## Quick Reference
+## 速查
 
 ```bash
-# MVP only
+# 仅 MVP
 ai-sdd init --primary-stack nodejs-ts
 
-# After MVP validation
+# MVP 验证通过后
 ai-sdd bootstrap-foundation --primary-stack nodejs-ts
 
-# Inspect current state
+# 查看当前状态
 ai-sdd status
 
-# Record an architectural decision
+# 记录一条架构决策
 ai-sdd add-adr
 
-# Record a stable feature boundary
+# 记录一条稳定的功能边界
 ai-sdd add-spec
 
-# Generate a draft harness that must be filled in
+# 生成一个需要手动填充的草稿 harness
 ai-sdd add-harness
 
-# Produce architecture review notes
+# 生成架构评审笔记
 ai-sdd review-architecture
 
-# Find likely harness targets
-ai-sdd suggest-harness
+# 寻找适合加 harness 的位置
+ai-sdd suggest-harness --top 1
 ```
