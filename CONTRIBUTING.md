@@ -12,12 +12,15 @@
 
 ## 开发环境
 
-本项目仅依赖 Python 标准库，无需额外安装依赖。
+核心功能仅依赖 Python 标准库。可选依赖：
+
+- `pypinyin`：用于将中文标题转拼音生成安全 slug（`pip install 'ai-sdd-bootstrap[cjk]'`）
+- `pytest` + `pytest-cov`：开发测试（`pip install -e '.[dev]'`）
 
 运行测试：
 
 ```bash
-python3 -m unittest discover -s tests -v
+pytest
 ```
 
 ## 提交信息规范
@@ -35,9 +38,9 @@ python3 -m unittest discover -s tests -v
 
 如果你想新增一种技术栈的 harness 支持，需要：
 
-1. 在 `scripts/ai_sdd_bootstrap.py` 的 `all_stacks()` 中加入新栈
-2. 在 `scripts/ai_sdd_bootstrap.py` 中实现 `add_harness_<stack>()`
-3. 在 `scripts/templates/` 中添加对应的 harness 模板
+1. 在 `ai_sdd_bootstrap/cli.py` 的 `all_stacks()` 中加入新栈
+2. 在 `ai_sdd_bootstrap/cli.py` 中实现 `add_harness_<stack>()`
+3. 在 `ai_sdd_bootstrap/templates/` 中添加对应的 harness 模板
 4. 更新 `SKILL.md` 和 `README.md`
 5. 添加测试
 
