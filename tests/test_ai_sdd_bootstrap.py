@@ -333,6 +333,27 @@ class AiSddBootstrapTests(unittest.TestCase):
         )
         self.assertTrue(path.exists())
 
+    def test_add_harness_reads_stack_from_project_meta(self):
+        """When project-meta.md exists, add-harness must parse it to infer stacks."""
+        guide_dir = self.root / "docs" / "guide"
+        guide_dir.mkdir(parents=True, exist_ok=True)
+        (guide_dir / "ai-behavior.md").write_text("", encoding="utf-8")
+        (guide_dir / "project-meta.md").write_text(
+            "**Primary stack:** python\n**Additional stacks:** none\n",
+            encoding="utf-8",
+        )
+        args = SimpleNamespace(
+            stack=None,
+            title="Login",
+            module="auth",
+            purpose="Lock login rejection.",
+            related_spec="",
+            kind="test",
+        )
+        self._capture(self.module.cmd_add_harness, args)
+        path = self.root / "tests" / "harness" / "auth" / "test_login.py"
+        self.assertTrue(path.exists())
+
 
 class DryRunTests(unittest.TestCase):
     def setUp(self):

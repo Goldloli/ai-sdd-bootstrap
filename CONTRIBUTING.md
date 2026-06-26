@@ -38,8 +38,8 @@ pytest
 
 如果你想新增一种技术栈的 harness 支持，需要：
 
-1. 在 `ai_sdd_bootstrap/cli.py` 的 `all_stacks()` 中加入新栈
-2. 在 `ai_sdd_bootstrap/cli.py` 中实现 `add_harness_<stack>()`
+1. 在 `ai_sdd_bootstrap/core.py` 的 `all_stacks()` 中加入新栈
+2. 在 `ai_sdd_bootstrap/commands.py` 中实现 `add_harness_<stack>()`
 3. 在 `ai_sdd_bootstrap/templates/` 中添加对应的 harness 模板
 4. 更新 `SKILL.md` 和 `README.md`
 5. 添加测试

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -580,18 +581,26 @@ def cmd_add_harness(args):
     # before the per-stack dispatch so the choice of --kind wins over --stack.
     if kind == "evaluation":
         if stack != "python":
-            print(
-                f"Warning: evaluation harnesses currently use a Python template; "
+            msg = (
+                f"evaluation harnesses currently use a Python template; "
                 f"--stack {stack} will be ignored."
             )
+            if core.is_strict():
+                print(f"Error: {msg}")
+                sys.exit(1)
+            print(f"Warning: {msg}")
         add_harness_evaluation(title, module, purpose, related_spec)
         return
     if kind == "scenario":
         if stack != "python":
-            print(
-                f"Warning: scenario harnesses currently use a Python template; "
+            msg = (
+                f"scenario harnesses currently use a Python template; "
                 f"--stack {stack} will be ignored."
             )
+            if core.is_strict():
+                print(f"Error: {msg}")
+                sys.exit(1)
+            print(f"Warning: {msg}")
         add_harness_scenario(title, module, purpose, related_spec)
         return
 

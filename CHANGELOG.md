@@ -2,14 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-06-26
+
+### Fixed
+- Add missing `import re` in `commands.py` that broke `add-harness` after `bootstrap-foundation`.
+- Include dotfiles in package data so `templates/.gitignore` is present in non-editable installs.
+- Update CONTRIBUTING.md to point to `core.py` for `all_stacks()`.
+- `--strict` now errors on `evaluation` / `scenario` harness with non-Python stack.
+
 ## [0.3.0] - 2026-06-26
 
 ### Added
 - CJK title support: romanize Chinese titles via optional `pypinyin` dependency.
 - `--dry-run` flag for `init`, `bootstrap-foundation`, `add-adr`, `add-spec`, `add-harness`, `review-architecture`.
+- `--strict` flag: fail instead of prompting or silently using defaults.
 - `status --json`: machine-readable project status output.
 - `validate` command with `--json` output: checks INDEX links, draft harnesses, and specs without harnesses.
+- Validation of `--related-spec` path existence when adding a harness.
 - pytest + coverage baseline; CI now runs pytest.
+
+### Changed
+- Split monolithic `cli.py` into `core.py`, `commands.py`, and `cli.py`.
+- `add-spec` now splits `in_scope` and `out_scope` into bullet lists.
 
 ### Fixed
 - Python 3.9 compatibility (`from __future__ import annotations`).

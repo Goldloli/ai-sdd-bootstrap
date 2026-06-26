@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-sdd-bootstrap"
-version = "0.2.0"
+version = "0.3.1"
 description = "Staged AI-engineering scaffold. Minimal MVP setup first, then full Spec/Harness/ADR framework on demand."
 readme = "README.md"
 # Chinese version: README_zh.md
@@ -45,7 +45,7 @@ where = ["."]
 include = ["ai_sdd_bootstrap*"]
 
 [tool.setuptools.package-data]
-ai_sdd_bootstrap = ["templates/*"]
+ai_sdd_bootstrap = ["templates/*", "templates/.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
