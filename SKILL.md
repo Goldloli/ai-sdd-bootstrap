@@ -19,17 +19,17 @@ Use this skill when:
 
 ## Commands
 
-This skill wraps `~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py`.
+This skill wraps the `ai_sdd_bootstrap` Python package. The Kimi Code skill entry point is `scripts/ai_sdd_bootstrap.py`; when installed as a CLI package the command is `ai-sdd`.
 
 Run one of:
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py init`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py bootstrap-foundation`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py status`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py review-architecture`
-- `python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py suggest-harness`
+- `ai-sdd init`
+- `ai-sdd bootstrap-foundation`
+- `ai-sdd status`
+- `ai-sdd add-adr`
+- `ai-sdd add-spec`
+- `ai-sdd add-harness`
+- `ai-sdd review-architecture`
+- `ai-sdd suggest-harness`
 
 ## Natural Language Invocation
 
@@ -78,14 +78,14 @@ Use `add-adr`, `add-spec`, `add-harness`, `review-architecture`, and `suggest-ha
 
 ## Design doc
 
-See the full design at `/Users/gejiawei/Desktop/ai_picuure/ai编程工程化skills/docs/superpowers/specs/2026-06-26-ai-sdd-bootstrap-design.md`.
+See the full design at [`DESIGN.md`](./DESIGN.md).
 
 ## Usage Examples
 
 ### Initialize a new project (MVP)
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py init
+ai-sdd init
 ```
 
 Choose your primary stack and optional additional stacks. The command creates the minimal MVP scaffold.
@@ -104,7 +104,7 @@ You can mix stacks, e.g. primary `nodejs-ts` + additional `python` for full-stac
 ### Bootstrap the full framework after MVP
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py bootstrap-foundation
+ai-sdd bootstrap-foundation
 ```
 
 This builds the docs/ADR/spec/harness structure and switches the project stage to `foundation`.
@@ -112,19 +112,19 @@ This builds the docs/ADR/spec/harness structure and switches the project stage t
 ### Check project status
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py status
+ai-sdd status
 ```
 
 ### Add an ADR
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr
+ai-sdd add-adr
 ```
 
 Non-interactive example:
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr \
+ai-sdd add-adr \
   --title "Use SQLite" \
   --background "The app needs local persistence" \
   --decision "Use SQLite for local data" \
@@ -135,13 +135,13 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-adr \
 ### Add a feature spec
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec
+ai-sdd add-spec
 ```
 
 Non-interactive example:
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec \
+ai-sdd add-spec \
   --title "Login Flow" \
   --in-scope "Email login" \
   --out-scope "Social login" \
@@ -152,13 +152,13 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec \
 ### Add a harness skeleton
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness
+ai-sdd add-harness
 ```
 
 Non-interactive example:
 
 ```bash
-python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness \
+ai-sdd add-harness \
   --stack nodejs-ts \
   --title "Login Rejects Wrong Password" \
   --module auth \
