@@ -1,5 +1,7 @@
 # AI SDD Bootstrap — An AI Agent Skill for Staged Engineering
 
+![AI SDD Bootstrap](assets/github-social-preview.png)
+
 > **This is an AI agent skill / CLI tool.** It provides a staged scaffold for AI-assisted software projects: stay light during MVP exploration, then add Specs, ADRs, and Harnesses only after the architecture stabilizes.
 >
 > 🇨🇳 [中文版 README](README_zh.md)

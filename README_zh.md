@@ -1,5 +1,7 @@
 # AI SDD Bootstrap — AI Agent 分阶段工程化 Skill
 
+![AI SDD Bootstrap](assets/github-social-preview.png)
+
 > **这是一个 AI Agent Skill / CLI 工具。** 它为 AI 辅助软件项目提供分阶段脚手架：MVP 探索期保持轻量，架构稳定后再补充 Spec、ADR、Harness 的完整结构。
 >
 > 🇺🇸 [English README](README.md)
