@@ -7,6 +7,8 @@ Philosophy:
 - 3 -> 10 (Iteration): keep adding specs and harnesses as the project grows.
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
