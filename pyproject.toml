@@ -31,9 +31,9 @@ requires-python = ">=3.9"
 ai-sdd = "ai_sdd_bootstrap.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/Goldloli/ai_sdd_bootstrap"
-Repository = "https://github.com/Goldloli/ai_sdd_bootstrap"
-Issues = "https://github.com/Goldloli/ai_sdd_bootstrap/issues"
+Homepage = "https://github.com/Goldloli/ai-sdd-bootstrap"
+Repository = "https://github.com/Goldloli/ai-sdd-bootstrap"
+Issues = "https://github.com/Goldloli/ai-sdd-bootstrap/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
