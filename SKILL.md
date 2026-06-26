@@ -95,6 +95,7 @@ Supported stacks:
 - `nodejs-ts`
 - `python`
 - `rust`
+- `go`
 - `language-agnostic`
 - `shell`
 
@@ -154,11 +155,31 @@ python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-spec \
 python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness
 ```
 
+Non-interactive example:
+
+```bash
+python3 ~/.agents/skills/ai-sdd-bootstrap/scripts/ai_sdd_bootstrap.py add-harness \
+  --stack nodejs-ts \
+  --title "Login Rejects Wrong Password" \
+  --module auth \
+  --purpose "Lock the invariant that invalid credentials never create a session." \
+  --related-spec docs/feature/login-flow.md \
+  --kind test
+```
+
 Generated harnesses are draft constraints and intentionally fail until you replace the placeholder with real assertions.
 
 Supported harness generators:
 - `nodejs-ts` → Vitest `.spec.ts`
 - `python` → pytest `test_*.py`
 - `rust` → cargo test `*.rs`
+- `go` → `go test` `*_test.go`
 - `shell` → bash `.sh` (also available as a fallback for any project)
 - `language-agnostic` → docs only, use `shell` if you need a generic harness
+
+Harness kinds (`--kind`):
+- `test` (default) — single-invariant unit harness, one stack per file
+- `evaluation` — fixed task set + scorer + pass threshold, for LLM/agent quality (python template only)
+- `scenario` — full workflow with expected trajectory and forbidden side effects (python template only)
+
+`--related-spec` writes a `Related spec:` line into the harness header. `status` uses these explicit links (with stem matching as a fallback) to report which specs still lack a hard constraint.
