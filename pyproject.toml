@@ -7,6 +7,7 @@ name = "ai-sdd-bootstrap"
 version = "0.2.0"
 description = "Staged AI-engineering scaffold. Minimal MVP setup first, then full Spec/Harness/ADR framework on demand."
 readme = "README.md"
+# Chinese version: README_zh.md
 license = {text = "MIT"}
 authors = [
     {name = "Goldloli"},
