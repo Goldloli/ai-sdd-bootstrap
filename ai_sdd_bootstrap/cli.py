@@ -22,6 +22,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = SCRIPT_DIR / "templates"
 PROJECT_ROOT = Path.cwd()
 _DRY_RUN = False
+_STRICT = False
 
 
 def set_dry_run(value: bool) -> None:
@@ -31,6 +32,15 @@ def set_dry_run(value: bool) -> None:
 
 def is_dry_run() -> bool:
     return _DRY_RUN
+
+
+def set_strict(value: bool) -> None:
+    global _STRICT
+    _STRICT = value
+
+
+def is_strict() -> bool:
+    return _STRICT
 
 
 def load_template(name: str) -> str:
@@ -51,13 +61,22 @@ def report_created(path: Path) -> None:
     print(f"Created: {path}")
 
 
+def _strict_error(question: str) -> None:
+    print(f"Error: missing required input for '{question}' (strict mode refuses interactive prompts).")
+    sys.exit(1)
+
+
 def prompt(question: str, default: str = "") -> str:
     suffix = f" [{default}]" if default else ""
     try:
         answer = input(f"{question}{suffix}: ").strip()
     except EOFError:
+        if _STRICT and not default:
+            _strict_error(question)
         print(f" (non-interactive, using default: {default!r})")
         return default
+    if _STRICT and not answer and not default:
+        _strict_error(question)
     return answer if answer else default
 
 
@@ -68,12 +87,17 @@ def prompt_choice(question: str, choices: list[str], default: str = "") -> str:
         try:
             answer = input(f"{question} ({options}){suffix}: ").strip()
         except EOFError:
+            if _STRICT and not default:
+                _strict_error(question)
             print(f" (non-interactive, using default: {default!r})")
             return default if default in choices else choices[0]
         if not answer and default:
             return default
         if answer in choices:
             return answer
+        if _STRICT:
+            print(f"Error: invalid choice '{answer}' in strict mode.")
+            sys.exit(1)
         print(f"Please choose one of: {', '.join(choices)}")
 
 
@@ -83,14 +107,21 @@ def prompt_multi(question: str, choices: list[str], default: list[str] | None = 
         answer = input("Enter choices or leave empty for none: ").strip()
     except EOFError:
         default = default or []
+        if _STRICT:
+            _strict_error(question)
         print(f" (non-interactive, using default: {default!r})")
         return default
     if not answer:
+        if _STRICT:
+            _strict_error(question)
         return default or []
     selected = [s.strip() for s in answer.split(",")]
     valid = [s for s in selected if s in choices]
     invalid = [s for s in selected if s not in choices]
     if invalid:
+        if _STRICT:
+            print(f"Error: invalid choices in strict mode: {', '.join(invalid)}")
+            sys.exit(1)
         print(f"Ignoring invalid choices: {', '.join(invalid)}")
     return valid
 
@@ -715,14 +746,19 @@ def cmd_add_spec(args):
 
     content = load_template("feature-spec.md").replace("{{TITLE}}", title)
 
-    content = content.replace(
-        "[What this feature does.]",
-        in_scope or "[To be completed]",
-    )
-    content = content.replace(
-        "[What this feature explicitly does NOT do.]",
-        out_scope or "[To be completed]",
-    )
+    if in_scope:
+        scope_items = "\n".join(f"- {item}" for item in split_items(in_scope))
+        content = content.replace("[What this feature does.]", scope_items)
+    else:
+        content = content.replace("[What this feature does.]", "- [To be completed]")
+
+    if out_scope:
+        out_items = "\n".join(f"- {item}" for item in split_items(out_scope))
+        content = content.replace("[What this feature explicitly does NOT do.]", out_items)
+    else:
+        content = content.replace(
+            "[What this feature explicitly does NOT do.]", "- [To be completed]"
+        )
 
     if boundaries:
         boundary_items = "\n".join(f"- {b}" for b in split_items(boundaries))
@@ -928,6 +964,15 @@ def cmd_add_harness(args):
         "related_spec",
         "Related spec path (e.g., 'docs/feature/login-flow.md')",
     )
+    if related_spec:
+        spec_path = PROJECT_ROOT / related_spec
+        if not spec_path.exists():
+            msg = f"Related spec not found: {related_spec}"
+            if is_strict():
+                print(f"Error: {msg}")
+                sys.exit(1)
+            print(f"Warning: {msg}")
+
     kind = prompt_choice_or_arg(
         args,
         "kind",
@@ -1451,10 +1496,18 @@ def main():
             help="Preview changes without writing files.",
         )
 
+    def add_strict(parser):
+        parser.add_argument(
+            "--strict",
+            action="store_true",
+            help="Fail instead of prompting or silently using defaults.",
+        )
+
     init_parser = subparsers.add_parser("init", help="Initialize minimal MVP scaffold")
     init_parser.add_argument("--primary-stack", choices=all_stacks())
     init_parser.add_argument("--additional-stack", action="append", help="Additional stack. Can be repeated or comma-separated.")
     add_dry_run(init_parser)
+    add_strict(init_parser)
 
     foundation_parser = subparsers.add_parser(
         "bootstrap-foundation",
@@ -1463,6 +1516,7 @@ def main():
     foundation_parser.add_argument("--primary-stack", choices=all_stacks())
     foundation_parser.add_argument("--additional-stack", action="append", help="Additional stack. Can be repeated or comma-separated.")
     add_dry_run(foundation_parser)
+    add_strict(foundation_parser)
 
     status_parser = subparsers.add_parser("status", help="Show project status and recommendations")
     status_parser.add_argument(
@@ -1478,6 +1532,7 @@ def main():
     adr_parser.add_argument("--consequences")
     adr_parser.add_argument("--status", choices=["proposed", "accepted", "deprecated"])
     add_dry_run(adr_parser)
+    add_strict(adr_parser)
 
     spec_parser = subparsers.add_parser("add-spec", help="Add a feature spec")
     spec_parser.add_argument("--title")
@@ -1487,6 +1542,7 @@ def main():
     spec_parser.add_argument("--acceptance")
     spec_parser.add_argument("--dependencies")
     add_dry_run(spec_parser)
+    add_strict(spec_parser)
 
     harness_parser = subparsers.add_parser("add-harness", help="Add a harness skeleton")
     harness_parser.add_argument("--stack")
@@ -1504,9 +1560,11 @@ def main():
         "scorer, for LLM/agent quality), scenario (full workflow trajectory).",
     )
     add_dry_run(harness_parser)
+    add_strict(harness_parser)
 
     review_parser = subparsers.add_parser("review-architecture", help="Generate architecture review doc")
     add_dry_run(review_parser)
+    add_strict(review_parser)
 
     validate_parser = subparsers.add_parser("validate", help="Check project health and consistency")
     validate_parser.add_argument(
@@ -1524,9 +1582,11 @@ def main():
         action="store_true",
         help="Only list candidates, do not prompt or generate harness files.",
     )
+    add_strict(suggest_parser)
 
     args = parser.parse_args()
     set_dry_run(bool(getattr(args, "dry_run", False)))
+    set_strict(bool(getattr(args, "strict", False)))
 
     commands = {
         "init": cmd_init,

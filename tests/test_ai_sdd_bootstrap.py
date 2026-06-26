@@ -136,6 +136,9 @@ class AiSddBootstrapTests(unittest.TestCase):
 
         spec_path = self.root / "docs" / "feature" / "login-flow.md"
         self.assertTrue(spec_path.exists())
+        spec = spec_path.read_text(encoding="utf-8")
+        self.assertIn("- User can log in with email", spec)
+        self.assertIn("- Social login", spec)
         index = (self.root / "docs" / "INDEX.md").read_text(encoding="utf-8")
         self.assertIn("login-flow.md", index)
         self.assertIn("Login Flow", index)
@@ -240,6 +243,20 @@ class AiSddBootstrapTests(unittest.TestCase):
             self.root / "tests" / "harness" / "auth" / "test_login_rejection.py"
         ).read_text(encoding="utf-8")
         self.assertIn("docs/feature/login-flow.md", harness)
+
+    def test_add_harness_allows_missing_related_spec(self):
+        """A non-existent --related-spec should not stop harness generation."""
+        self._capture(
+            self.module.add_harness_python,
+            "Login rejection",
+            "auth",
+            "Reject login with wrong password.",
+            "docs/feature/missing.md",
+        )
+        harness = (
+            self.root / "tests" / "harness" / "auth" / "test_login_rejection.py"
+        )
+        self.assertTrue(harness.exists())
 
     def test_spec_with_explicit_related_harness_is_not_flagged_missing(self):
         """A spec referenced via --related-spec must not appear in the missing list."""
