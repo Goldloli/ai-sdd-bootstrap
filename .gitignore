@@ -20,3 +20,4 @@ dist/
 
 # Local development installs
 *.egg
+.coverage
